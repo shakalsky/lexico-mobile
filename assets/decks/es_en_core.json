@@ -1,0 +1,246 @@
+{
+  "deck_id": "es-en-core",
+  "language": "Español",
+  "words": [
+    {
+      "id": "es-atardecer",
+      "question_short": "el atardecer",
+      "answer_short": "sunset",
+      "question_example": "Caminamos por la playa al atardecer.",
+      "answer_example": "We walked along the beach at sunset.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-aprovechar",
+      "question_short": "aprovechar",
+      "answer_short": "to make the most of",
+      "question_example": "Hay que aprovechar el buen tiempo.",
+      "answer_example": "We should make the most of the good weather.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-carpeta",
+      "question_short": "la carpeta",
+      "answer_short": "folder",
+      "question_example": "Guardé los papeles en la carpeta azul.",
+      "answer_example": "I kept the papers in the blue folder.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-madrugar",
+      "question_short": "madrugar",
+      "answer_short": "to get up very early",
+      "question_example": "No me gusta madrugar los domingos.",
+      "answer_example": "I don't like getting up early on Sundays.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-vecindario",
+      "question_short": "el vecindario",
+      "answer_short": "neighbourhood",
+      "question_example": "Todo el vecindario salió a la calle.",
+      "answer_example": "The whole neighbourhood came outside.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-embarazada",
+      "question_short": "embarazada",
+      "answer_short": "pregnant",
+      "question_example": "Mi hermana está embarazada.",
+      "answer_example": "My sister is pregnant.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-sobremesa",
+      "question_short": "la sobremesa",
+      "answer_short": "table talk after a meal",
+      "question_example": "La sobremesa duró dos horas.",
+      "answer_example": "The after-lunch conversation lasted two hours.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-sensible",
+      "question_short": "sensible",
+      "answer_short": "sensitive",
+      "question_example": "Es muy sensible a las críticas.",
+      "answer_example": "He is very sensitive to criticism.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-amanecer",
+      "question_short": "el amanecer",
+      "answer_short": "dawn",
+      "question_example": "Salimos antes del amanecer.",
+      "answer_example": "We left before dawn.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-tardar",
+      "question_short": "tardar",
+      "answer_short": "to take time",
+      "question_example": "El tren tardó media hora en llegar.",
+      "answer_example": "The train took half an hour to arrive.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-lograr",
+      "question_short": "lograr",
+      "answer_short": "to manage to",
+      "question_example": "Logró terminar el informe a tiempo.",
+      "answer_example": "She managed to finish the report on time.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-actualmente",
+      "question_short": "actualmente",
+      "answer_short": "currently",
+      "question_example": "Actualmente vivo en Sevilla.",
+      "answer_example": "I currently live in Seville.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-echar-de-menos",
+      "question_short": "echar de menos",
+      "answer_short": "to miss (someone)",
+      "question_example": "Echo de menos a mis abuelos.",
+      "answer_example": "I miss my grandparents.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-la-huelga",
+      "question_short": "la huelga",
+      "answer_short": "strike",
+      "question_example": "Los maquinistas están en huelga.",
+      "answer_example": "The train drivers are on strike.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-el-bocadillo",
+      "question_short": "el bocadillo",
+      "answer_short": "sandwich",
+      "question_example": "Me preparé un bocadillo de jamón.",
+      "answer_example": "I made myself a ham sandwich.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-la-cuenta",
+      "question_short": "la cuenta",
+      "answer_short": "the bill",
+      "question_example": "¿Nos trae la cuenta, por favor?",
+      "answer_example": "Could you bring us the bill, please?",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-soler",
+      "question_short": "soler",
+      "answer_short": "to usually do",
+      "question_example": "Suelo desayunar café con tostadas.",
+      "answer_example": "I usually have coffee and toast for breakfast.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-el-atasco",
+      "question_short": "el atasco",
+      "answer_short": "traffic jam",
+      "question_example": "Había un atasco enorme en la M-30.",
+      "answer_example": "There was a huge traffic jam on the M-30.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-imprescindible",
+      "question_short": "imprescindible",
+      "answer_short": "essential",
+      "question_example": "El pasaporte es imprescindible para el viaje.",
+      "answer_example": "A passport is essential for the trip.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-el-ocio",
+      "question_short": "el ocio",
+      "answer_short": "leisure",
+      "question_example": "Dedica su tiempo de ocio a la pintura.",
+      "answer_example": "He spends his leisure time painting.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-apenas",
+      "question_short": "apenas",
+      "answer_short": "barely",
+      "question_example": "Apenas dormí anoche.",
+      "answer_example": "I barely slept last night.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-la-cerradura",
+      "question_short": "la cerradura",
+      "answer_short": "lock",
+      "question_example": "La llave se quedó en la cerradura.",
+      "answer_example": "The key was left in the lock.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-arrepentirse",
+      "question_short": "arrepentirse",
+      "answer_short": "to regret",
+      "question_example": "No me arrepiento de nada.",
+      "answer_example": "I don't regret anything.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    },
+    {
+      "id": "es-el-cariño",
+      "question_short": "el cariño",
+      "answer_short": "affection",
+      "question_example": "Habla de su pueblo con mucho cariño.",
+      "answer_example": "He speaks about his village with great affection.",
+      "shows_count": 0,
+      "successes_count": 0,
+      "failures_count": 0
+    }
+  ]
+}

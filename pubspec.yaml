@@ -1,0 +1,54 @@
+name: lexico
+description: "Léxico — learn vocabulary by swiping through spaced-repetition cards."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_bloc: ^9.1.1
+  equatable: ^2.1.0
+  dio: ^5.11.0
+  drift: ^2.34.3
+  drift_flutter: ^0.3.1
+  get_it: ^9.2.1
+  path_provider: ^2.1.6
+  path: ^1.9.1
+  intl: ^0.20.3
+  bloc: ^9.2.1
+  shared_preferences: ^2.5.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  build_runner: ^2.15.1
+  drift_dev: ^2.34.0
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.5
+
+flutter:
+  uses-material-design: true
+
+  # A plain `flutter run` (no --flavor) builds the dev flavor.
+  default-flavor: dev
+
+  assets:
+    - assets/decks/
+
+  fonts:
+    - family: InstrumentSerif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif-Regular.ttf
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          style: italic
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
