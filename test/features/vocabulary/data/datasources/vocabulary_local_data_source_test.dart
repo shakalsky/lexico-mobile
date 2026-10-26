@@ -191,6 +191,90 @@ void main() {
     });
   });
 
+  test(
+    'deleting a deck drops it, its words, progress and study flag',
+    () async {
+      await db
+          .into(db.decks)
+          .insert(
+            DeckRow(
+              id: testDeckId,
+              name: 'Core',
+              language: 'Español',
+              createdAt: now,
+            ),
+          );
+      await replace([row('a'), row('b', position: 1)]);
+      await local.saveReview(ReviewState.fresh('a', now).toTestRow());
+      await local.replaceDeck('es-food', [
+        row('pan').copyWith(deckId: 'es-food'),
+      ], now);
+      await local.setDeckStudied('es-food', studied: true);
+
+      await local.deleteDeck(testDeckId);
+
+      expect(await local.wordsOfDeck(testDeckId), isEmpty);
+      expect(await local.studiedDeckIds(), {'es-food'});
+      expect(await db.select(db.reviews).get(), hasLength(1));
+      expect(await local.wordCount(), 1);
+      expect(await db.select(db.decks).get(), isEmpty);
+    },
+  );
+
+  group('words added on the device', () {
+    test('are stored due at once, after the last word', () async {
+      await replace([row('a'), row('b', position: 1)]);
+
+      final position = await local.nextPosition(testDeckId);
+      await local.insertWord(row('c', position: position), now);
+
+      expect(position, 2);
+      final cards = await local.dueCards(now: now, limit: 8);
+      expect(cards.map((card) => card.word.id), ['a', 'b', 'c']);
+    });
+
+    test('start a new deck at position zero', () async {
+      expect(await local.nextPosition('es-food'), 0);
+    });
+  });
+
+  test(
+    'finds a sentence already in the deck, but not the word itself',
+    () async {
+      await replace([row('a')]);
+
+      expect(await local.hasQuestionExample(testDeckId, 'ejemplo a'), isTrue);
+      expect(await local.hasQuestionExample('es-food', 'ejemplo a'), isFalse);
+      expect(
+        await local.hasQuestionExample(
+          testDeckId,
+          'ejemplo a',
+          exceptWordId: 'a',
+        ),
+        isFalse,
+      );
+    },
+  );
+
+  test('knows which deck a word belongs to', () async {
+    await replace([row('a')]);
+
+    expect(await local.deckIdOfWord('a'), testDeckId);
+    expect(await local.deckIdOfWord('missing'), isNull);
+  });
+
+  test('counts an answer in the word counters', () async {
+    await replace([row('a')]);
+
+    await local.countAnswer('a', correct: true);
+    await local.countAnswer('a', correct: false);
+
+    final word = (await local.wordsOfDeck(testDeckId)).single;
+    expect(word.showsCount, 2);
+    expect(word.successesCount, 1);
+    expect(word.failuresCount, 1);
+  });
+
   test('cards due at the same moment keep the deck order', () async {
     await replace(
       [

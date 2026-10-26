@@ -3,7 +3,7 @@ import 'package:lexico/core/usecase/use_case.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
 import 'package:lexico/features/vocabulary/domain/repositories/vocabulary_repository.dart';
 
-/// Every word of one deck, given its id.
+/// Every stored word of one deck, given its id.
 class GetDeckWords implements UseCase<List<VocabWord>, String> {
   const GetDeckWords(this._repository);
 

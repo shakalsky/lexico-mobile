@@ -2,24 +2,37 @@ import 'package:lexico/core/result/result.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/repositories/decks_repository.dart';
 
-/// Replays queued results; the last one repeats once the queue runs down.
+/// [stored] is what is on the device. [decks] is what each refresh answers,
+/// replayed in order; the last one repeats once the queue runs down.
 class FakeDecksRepository implements DecksRepository {
   FakeDecksRepository({
     List<Result<List<Deck>>>? decks,
     List<Result<Deck>>? created,
+    List<Deck> stored = const [],
   }) : _decks = decks ?? [const Result.success([])],
-       _created = created ?? [];
+       _created = created ?? [],
+       stored = [...stored];
 
   final List<Result<List<Deck>>> _decks;
   final List<Result<Deck>> _created;
+  final List<Deck> stored;
 
-  int getCalls = 0;
+  int refreshCalls = 0;
   final List<({String name, String language})> createCalls = [];
 
   @override
-  Future<Result<List<Deck>>> getDecks() async {
-    getCalls++;
-    return _decks.length > 1 ? _decks.removeAt(0) : _decks.single;
+  Future<Result<List<Deck>>> getDecks() async => Result.success([...stored]);
+
+  @override
+  Future<Result<List<Deck>>> refreshDecks() async {
+    refreshCalls++;
+    final result = _decks.length > 1 ? _decks.removeAt(0) : _decks.single;
+    if (result case Success(:final value)) {
+      stored
+        ..clear()
+        ..addAll(value);
+    }
+    return result;
   }
 
   @override
@@ -28,7 +41,9 @@ class FakeDecksRepository implements DecksRepository {
     required String language,
   }) async {
     createCalls.add((name: name, language: language));
-    return _created.length > 1 ? _created.removeAt(0) : _created.single;
+    final result = _created.length > 1 ? _created.removeAt(0) : _created.single;
+    if (result case Success(:final value)) stored.add(value);
+    return result;
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/core/utils/date_utils.dart';
@@ -6,6 +8,7 @@ import 'package:lexico/features/vocabulary/domain/entities/learner_stats.dart';
 import 'package:lexico/features/vocabulary/domain/entities/word_draft.dart';
 import 'package:lexico/features/vocabulary/domain/entities/review_state.dart';
 import 'package:lexico/features/vocabulary/domain/entities/study_card.dart';
+import 'package:lexico/features/vocabulary/domain/entities/sync_conflict.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
 import 'package:lexico/features/vocabulary/domain/repositories/vocabulary_repository.dart';
 
@@ -38,9 +41,14 @@ class FakeVocabularyRepository implements VocabularyRepository {
   /// When set, [setDeckStudied] fails with it instead of saving.
   Failure? setStudiedFailure;
 
-  /// What [deckWords] answers per deck, replayed in order; the last answer
-  /// repeats. Decks not listed have no words.
+  /// The words stored per deck, which [deckWords] answers with.
+  final Map<String, List<VocabWord>> storedDeckWords = {};
+
+  /// What [refreshDeckWords] answers per deck, replayed in order; the last
+  /// answer repeats. Decks not listed have no words.
   final Map<String, List<Result<List<VocabWord>>>> deckWordResults = {};
+
+  /// Calls to [refreshDeckWords].
   int deckWordCalls = 0;
 
   /// What [addWord] answers, replayed in order; the last answer repeats.
@@ -97,11 +105,17 @@ class FakeVocabularyRepository implements VocabularyRepository {
   }
 
   @override
-  Future<Result<List<VocabWord>>> deckWords(String deckId) async {
+  Future<Result<List<VocabWord>>> deckWords(String deckId) async =>
+      Result.success([...?storedDeckWords[deckId]]);
+
+  @override
+  Future<Result<List<VocabWord>>> refreshDeckWords(String deckId) async {
     deckWordCalls++;
     final results = deckWordResults[deckId];
     if (results == null) return const Result.success([]);
-    return results.length > 1 ? results.removeAt(0) : results.single;
+    final result = results.length > 1 ? results.removeAt(0) : results.single;
+    if (result case Success(:final value)) storedDeckWords[deckId] = value;
+    return result;
   }
 
   @override
@@ -156,6 +170,12 @@ class FakeVocabularyRepository implements VocabularyRepository {
     }
     return Result.success(state);
   }
+
+  /// Whatever is added here reaches [syncConflicts].
+  final StreamController<SyncConflict> conflicts = StreamController.broadcast();
+
+  @override
+  Stream<SyncConflict> syncConflicts() => conflicts.stream;
 
   @override
   Future<Result<LearnerStats>> learnerStats() async {

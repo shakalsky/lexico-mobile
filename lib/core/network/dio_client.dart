@@ -24,19 +24,30 @@ abstract final class DioClient {
 }
 
 /// Turns a [DioException] into the data layer's own exception vocabulary.
+///
+/// Only failures to connect are known to have sent nothing; every other
+/// network failure may have reached the service.
 AppException mapDioException(DioException error) => switch (error.type) {
-  DioExceptionType.connectionTimeout ||
+  DioExceptionType.connectionTimeout => const NetworkException(
+    'The word service took too long to answer.',
+  ),
   DioExceptionType.sendTimeout ||
   DioExceptionType.receiveTimeout ||
   DioExceptionType.transformTimeout => const NetworkException(
     'The word service took too long to answer.',
+    true,
   ),
-  DioExceptionType.connectionError || DioExceptionType.unknown =>
-    NetworkException(error.message ?? 'Could not reach the word service.'),
+  DioExceptionType.connectionError => NetworkException(
+    error.message ?? 'Could not reach the word service.',
+  ),
+  DioExceptionType.unknown => NetworkException(
+    error.message ?? 'Could not reach the word service.',
+    true,
+  ),
   DioExceptionType.badCertificate => const NetworkException(
     'The word service presented an invalid certificate.',
   ),
-  DioExceptionType.cancel => const NetworkException('Request cancelled.'),
+  DioExceptionType.cancel => const NetworkException('Request cancelled.', true),
   DioExceptionType.badResponse => _serverException(error.response),
 };
 

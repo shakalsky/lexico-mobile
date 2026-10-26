@@ -29,7 +29,15 @@ final class ServerException extends AppException {
 }
 
 final class NetworkException extends AppException {
-  const NetworkException([super.message = 'Network unreachable.']);
+  const NetworkException([
+    super.message = 'Network unreachable.',
+    this.mayHaveArrived = false,
+  ]);
+
+  /// True when the request may have reached the service before the
+  /// connection failed, e.g. a reply that timed out. Calls that are not safe
+  /// to repeat must not be retried then.
+  final bool mayHaveArrived;
 }
 
 final class CacheException extends AppException {

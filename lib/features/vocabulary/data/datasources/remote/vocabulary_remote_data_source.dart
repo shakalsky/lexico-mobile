@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:lexico/core/error/exception.dart';
 import 'package:lexico/core/network/guard_request.dart';
+import 'package:lexico/features/vocabulary/data/models/word_draft_json.dart';
 import 'package:lexico/features/vocabulary/data/models/word_dto.dart';
 import 'package:lexico/features/vocabulary/domain/entities/word_draft.dart';
 
@@ -11,8 +12,13 @@ abstract interface class VocabularyRemoteDataSource {
 
   /// `POST /decks/{deckId}/words` with `{ "words": [ … ] }` →
   /// `201 { "words": [ … ] }`: the created words, in request order. All or
-  /// nothing — if one is refused, none are added.
-  Future<List<WordDto>> addWords(String deckId, List<WordDraft> words);
+  /// nothing — if one is refused, none are added. Each word keeps the [id]
+  /// it was given, so sending the same words again is refused rather than
+  /// adding them twice.
+  Future<List<WordDto>> addWords(
+    String deckId,
+    List<({String id, WordDraft draft})> words,
+  );
 
   /// `PATCH /words/{wordId}` with all four text fields → `{ "word": … }`.
   Future<WordDto> editWord(String wordId, WordDraft draft);
@@ -44,30 +50,34 @@ class VocabularyRemoteDataSourceImpl implements VocabularyRemoteDataSource {
   });
 
   @override
-  Future<List<WordDto>> addWords(String deckId, List<WordDraft> words) =>
-      guardRequest(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/decks/${Uri.encodeComponent(deckId)}/words',
-          data: {
-            'words': [for (final word in words) _draftJson(word)],
-          },
-        );
-        final created = response.data?['words'];
-        if (created is! List) {
-          throw const ServerException('Add response had no "words" list.');
-        }
-        return created
-            .cast<Map<String, dynamic>>()
-            .map(WordDto.fromJson)
-            .toList(growable: false);
-      });
+  Future<List<WordDto>> addWords(
+    String deckId,
+    List<({String id, WordDraft draft})> words,
+  ) => guardRequest(() async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/decks/${Uri.encodeComponent(deckId)}/words',
+      data: {
+        'words': [
+          for (final word in words) {'id': word.id, ...word.draft.toJson()},
+        ],
+      },
+    );
+    final created = response.data?['words'];
+    if (created is! List) {
+      throw const ServerException('Add response had no "words" list.');
+    }
+    return created
+        .cast<Map<String, dynamic>>()
+        .map(WordDto.fromJson)
+        .toList(growable: false);
+  });
 
   @override
   Future<WordDto> editWord(String wordId, WordDraft draft) =>
       guardRequest(() async {
         final response = await _dio.patch<Map<String, dynamic>>(
           '/words/${Uri.encodeComponent(wordId)}',
-          data: _draftJson(draft),
+          data: draft.toJson(),
         );
         final word = response.data?['word'];
         if (word is! Map<String, dynamic>) {
@@ -75,15 +85,6 @@ class VocabularyRemoteDataSourceImpl implements VocabularyRemoteDataSource {
         }
         return WordDto.fromJson(word);
       });
-
-  /// The text fields of a word as the API names them. A `null` word or
-  /// meaning is sent as `null`, which the API stores as "not given".
-  Map<String, dynamic> _draftJson(WordDraft draft) => {
-    'question_short': draft.questionShort,
-    'answer_short': draft.answerShort,
-    'question_example': draft.questionExample,
-    'answer_example': draft.answerExample,
-  };
 
   @override
   Future<WordDto> submitReview(String wordId, {required bool correct}) =>

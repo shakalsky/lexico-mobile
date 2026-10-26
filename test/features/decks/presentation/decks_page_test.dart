@@ -7,13 +7,16 @@ import 'package:lexico/core/theme/app_theme.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
+import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
 import 'package:lexico/features/decks/presentation/pages/decks_page.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_studied_deck_ids.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/set_deck_studied.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/watch_sync_conflicts.dart';
 
 import '../../../helpers/fake_decks_repository.dart';
 import '../../../helpers/fake_vocabulary_repository.dart';
@@ -45,12 +48,15 @@ void main() {
         home: BlocProvider(
           create: (_) => DecksBloc(
             getDecks: GetDecks(repository),
+            refreshDecks: RefreshDecks(repository),
             getStudiedDeckIds: GetStudiedDeckIds(vocabulary),
             setDeckStudied: SetDeckStudied(vocabulary),
           )..add(const DecksRequested()),
           child: DecksView(
             createDeck: CreateDeck(repository),
             getDeckWords: GetDeckWords(vocabulary),
+            refreshDeckWords: RefreshDeckWords(vocabulary),
+            watchSyncConflicts: WatchSyncConflicts(vocabulary),
             addWord: AddWord(vocabulary),
             editWord: EditWord(vocabulary),
           ),
@@ -182,7 +188,7 @@ void main() {
     await settle(tester);
 
     expect(find.text('Food'), findsOneWidget);
-    expect(repository.getCalls, 2);
+    expect(repository.refreshCalls, 2);
   });
 
   testWidgets('pulling down reloads the list', (tester) async {
@@ -199,7 +205,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Food'), findsOneWidget);
-    expect(repository.getCalls, 2);
+    expect(repository.refreshCalls, 2);
   });
 
   group('new deck', () {
@@ -228,7 +234,7 @@ void main() {
       expect(find.text('Food'), findsOneWidget);
       expect(find.text('Created “Food”'), findsOneWidget);
       expect(repository.createCalls, [(name: 'Food', language: 'English')]);
-      expect(repository.getCalls, 1, reason: 'no reload needed');
+      expect(repository.refreshCalls, 1, reason: 'no reload needed');
     });
 
     testWidgets('sends the language picked from the menu', (tester) async {

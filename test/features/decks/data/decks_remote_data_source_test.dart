@@ -87,12 +87,20 @@ void main() {
       },
     });
 
-    final deck = await remote.createDeck(name: 'Food', language: 'Español');
+    final deck = await remote.createDeck(
+      id: '6f1c0a2e-0000-4000-8000-000000000000',
+      name: 'Food',
+      language: 'Español',
+    );
 
     final request = adapter.lastRequest!;
     expect(request.method, 'POST');
     expect(request.path, '/decks');
-    expect(request.data, {'name': 'Food', 'language': 'Español'});
+    expect(request.data, {
+      'id': '6f1c0a2e-0000-4000-8000-000000000000',
+      'name': 'Food',
+      'language': 'Español',
+    });
     expect(request.contentType, startsWith(Headers.jsonContentType));
     expect(deck.id, '6f1c0a2e-0000-4000-8000-000000000000');
     expect(deck.name, 'Food');
@@ -107,7 +115,7 @@ void main() {
     });
 
     await expectLater(
-      remote.createDeck(name: ' ', language: 'Español'),
+      remote.createDeck(id: 'x', name: ' ', language: 'Español'),
       throwsA(
         isA<ServerException>()
             .having((e) => e.code, 'code', 'FST_ERR_VALIDATION')

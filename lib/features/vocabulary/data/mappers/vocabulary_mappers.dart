@@ -5,6 +5,7 @@ import 'package:lexico/features/vocabulary/data/models/word_dto.dart';
 import 'package:lexico/features/vocabulary/domain/entities/review_state.dart';
 import 'package:lexico/features/vocabulary/domain/entities/study_card.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
+import 'package:lexico/features/vocabulary/domain/entities/word_draft.dart';
 
 /// The single place where wire, database and domain shapes meet.
 extension WordDtoMapper on WordDto {
@@ -50,6 +51,16 @@ List<WordRow> deckRows(String deckId, List<WordDto> words) => [
   for (final (index, word) in words.indexed)
     word.toRow(deckId: deckId, position: index),
 ];
+
+extension WordDraftMapper on WordDraft {
+  /// The text fields only: the word keeps its counters and place.
+  WordsCompanion toTextUpdate() => WordsCompanion(
+    questionShort: Value(questionShort),
+    answerShort: Value(answerShort),
+    questionExample: Value(questionExample),
+    answerExample: Value(answerExample),
+  );
+}
 
 extension WordRowMapper on WordRow {
   VocabWord toEntity() => VocabWord(

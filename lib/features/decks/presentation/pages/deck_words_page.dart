@@ -9,6 +9,8 @@ import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/watch_sync_conflicts.dart';
 import 'package:lexico/features/vocabulary/presentation/widgets/primary_button.dart';
 
 /// One deck and all of its words, in deck order.
@@ -29,12 +31,18 @@ class DeckWordsPage extends StatelessWidget {
   static Route<void> route(
     Deck deck, {
     required GetDeckWords getDeckWords,
+    required RefreshDeckWords refreshDeckWords,
+    required WatchSyncConflicts watchSyncConflicts,
     required AddWord addWord,
     required EditWord editWord,
   }) => MaterialPageRoute(
     builder: (_) => BlocProvider(
-      create: (_) =>
-          DeckWordsCubit(deckId: deck.id, getDeckWords: getDeckWords)..load(),
+      create: (_) => DeckWordsCubit(
+        deckId: deck.id,
+        getDeckWords: getDeckWords,
+        refreshDeckWords: refreshDeckWords,
+        watchSyncConflicts: watchSyncConflicts,
+      )..load(),
       child: DeckWordsPage(deck: deck, addWord: addWord, editWord: editWord),
     ),
   );

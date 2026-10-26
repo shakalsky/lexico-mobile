@@ -3,6 +3,313 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $DecksTable extends Decks with TableInfo<$DecksTable, DeckRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DecksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _languageMeta = const VerificationMeta(
+    'language',
+  );
+  @override
+  late final GeneratedColumn<String> language = GeneratedColumn<String>(
+    'language',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, language, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'decks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DeckRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('language')) {
+      context.handle(
+        _languageMeta,
+        language.isAcceptableOrUnknown(data['language']!, _languageMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_languageMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DeckRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DeckRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      language: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}language'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DecksTable createAlias(String alias) {
+    return $DecksTable(attachedDatabase, alias);
+  }
+}
+
+class DeckRow extends DataClass implements Insertable<DeckRow> {
+  final String id;
+  final String name;
+  final String language;
+  final DateTime createdAt;
+  const DeckRow({
+    required this.id,
+    required this.name,
+    required this.language,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['language'] = Variable<String>(language);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  DecksCompanion toCompanion(bool nullToAbsent) {
+    return DecksCompanion(
+      id: Value(id),
+      name: Value(name),
+      language: Value(language),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DeckRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DeckRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      language: serializer.fromJson<String>(json['language']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'language': serializer.toJson<String>(language),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  DeckRow copyWith({
+    String? id,
+    String? name,
+    String? language,
+    DateTime? createdAt,
+  }) => DeckRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    language: language ?? this.language,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  DeckRow copyWithCompanion(DecksCompanion data) {
+    return DeckRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      language: data.language.present ? data.language.value : this.language,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DeckRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('language: $language, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, language, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DeckRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.language == this.language &&
+          other.createdAt == this.createdAt);
+}
+
+class DecksCompanion extends UpdateCompanion<DeckRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> language;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const DecksCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.language = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DecksCompanion.insert({
+    required String id,
+    required String name,
+    required String language,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       language = Value(language),
+       createdAt = Value(createdAt);
+  static Insertable<DeckRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? language,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (language != null) 'language': language,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DecksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? language,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return DecksCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      language: language ?? this.language,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (language.present) {
+      map['language'] = Variable<String>(language.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DecksCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('language: $language, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $WordsTable extends Words with TableInfo<$WordsTable, WordRow> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -290,6 +597,7 @@ class WordRow extends DataClass implements Insertable<WordRow> {
   final String deckId;
 
   /// Index within the deck, in the order the service returned the words.
+  /// Words added on the device go last until the next sync.
   final int position;
 
   /// `null` for a sentence card.
@@ -298,7 +606,8 @@ class WordRow extends DataClass implements Insertable<WordRow> {
   final String questionExample;
   final String answerExample;
 
-  /// Answer totals as counted by the service.
+  /// Answer totals as counted by the service, plus answers given on the
+  /// device that have not been sent yet.
   final int showsCount;
   final int successesCount;
   final int failuresCount;
@@ -1795,22 +2104,431 @@ class StudySessionsCompanion extends UpdateCompanion<StudySessionRow> {
   }
 }
 
+class $PendingChangesTable extends PendingChanges
+    with TableInfo<$PendingChangesTable, PendingChangeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingChangesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deckIdMeta = const VerificationMeta('deckId');
+  @override
+  late final GeneratedColumn<String> deckId = GeneratedColumn<String>(
+    'deck_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    deckId,
+    payload,
+    createdAt,
+    attempts,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_changes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingChangeRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('deck_id')) {
+      context.handle(
+        _deckIdMeta,
+        deckId.isAcceptableOrUnknown(data['deck_id']!, _deckIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deckIdMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PendingChangeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingChangeRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      deckId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deck_id'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingChangesTable createAlias(String alias) {
+    return $PendingChangesTable(attachedDatabase, alias);
+  }
+}
+
+class PendingChangeRow extends DataClass
+    implements Insertable<PendingChangeRow> {
+  final int id;
+
+  /// What kind of change [payload] describes, e.g. `word_added`.
+  final String kind;
+
+  /// The deck the change belongs to. A deck with changes waiting is not
+  /// overwritten by a sync.
+  final String deckId;
+
+  /// The change itself, as JSON.
+  final String payload;
+  final DateTime createdAt;
+
+  /// Failed attempts so far. A change the service keeps refusing is dropped
+  /// after a few.
+  final int attempts;
+  const PendingChangeRow({
+    required this.id,
+    required this.kind,
+    required this.deckId,
+    required this.payload,
+    required this.createdAt,
+    required this.attempts,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kind'] = Variable<String>(kind);
+    map['deck_id'] = Variable<String>(deckId);
+    map['payload'] = Variable<String>(payload);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['attempts'] = Variable<int>(attempts);
+    return map;
+  }
+
+  PendingChangesCompanion toCompanion(bool nullToAbsent) {
+    return PendingChangesCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      deckId: Value(deckId),
+      payload: Value(payload),
+      createdAt: Value(createdAt),
+      attempts: Value(attempts),
+    );
+  }
+
+  factory PendingChangeRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingChangeRow(
+      id: serializer.fromJson<int>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      deckId: serializer.fromJson<String>(json['deckId']),
+      payload: serializer.fromJson<String>(json['payload']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(kind),
+      'deckId': serializer.toJson<String>(deckId),
+      'payload': serializer.toJson<String>(payload),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'attempts': serializer.toJson<int>(attempts),
+    };
+  }
+
+  PendingChangeRow copyWith({
+    int? id,
+    String? kind,
+    String? deckId,
+    String? payload,
+    DateTime? createdAt,
+    int? attempts,
+  }) => PendingChangeRow(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    deckId: deckId ?? this.deckId,
+    payload: payload ?? this.payload,
+    createdAt: createdAt ?? this.createdAt,
+    attempts: attempts ?? this.attempts,
+  );
+  PendingChangeRow copyWithCompanion(PendingChangesCompanion data) {
+    return PendingChangeRow(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      deckId: data.deckId.present ? data.deckId.value : this.deckId,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingChangeRow(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('deckId: $deckId, ')
+          ..write('payload: $payload, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('attempts: $attempts')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, kind, deckId, payload, createdAt, attempts);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingChangeRow &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.deckId == this.deckId &&
+          other.payload == this.payload &&
+          other.createdAt == this.createdAt &&
+          other.attempts == this.attempts);
+}
+
+class PendingChangesCompanion extends UpdateCompanion<PendingChangeRow> {
+  final Value<int> id;
+  final Value<String> kind;
+  final Value<String> deckId;
+  final Value<String> payload;
+  final Value<DateTime> createdAt;
+  final Value<int> attempts;
+  const PendingChangesCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.deckId = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.attempts = const Value.absent(),
+  });
+  PendingChangesCompanion.insert({
+    this.id = const Value.absent(),
+    required String kind,
+    required String deckId,
+    required String payload,
+    required DateTime createdAt,
+    this.attempts = const Value.absent(),
+  }) : kind = Value(kind),
+       deckId = Value(deckId),
+       payload = Value(payload),
+       createdAt = Value(createdAt);
+  static Insertable<PendingChangeRow> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<String>? deckId,
+    Expression<String>? payload,
+    Expression<DateTime>? createdAt,
+    Expression<int>? attempts,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (deckId != null) 'deck_id': deckId,
+      if (payload != null) 'payload': payload,
+      if (createdAt != null) 'created_at': createdAt,
+      if (attempts != null) 'attempts': attempts,
+    });
+  }
+
+  PendingChangesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? kind,
+    Value<String>? deckId,
+    Value<String>? payload,
+    Value<DateTime>? createdAt,
+    Value<int>? attempts,
+  }) {
+    return PendingChangesCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      deckId: deckId ?? this.deckId,
+      payload: payload ?? this.payload,
+      createdAt: createdAt ?? this.createdAt,
+      attempts: attempts ?? this.attempts,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (deckId.present) {
+      map['deck_id'] = Variable<String>(deckId.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingChangesCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('deckId: $deckId, ')
+          ..write('payload: $payload, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('attempts: $attempts')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $DecksTable decks = $DecksTable(this);
   late final $WordsTable words = $WordsTable(this);
   late final $ReviewsTable reviews = $ReviewsTable(this);
   late final $StudyDecksTable studyDecks = $StudyDecksTable(this);
   late final $StudySessionsTable studySessions = $StudySessionsTable(this);
+  late final $PendingChangesTable pendingChanges = $PendingChangesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    decks,
     words,
     reviews,
     studyDecks,
     studySessions,
+    pendingChanges,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -1824,6 +2542,180 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ]);
 }
 
+typedef $$DecksTableCreateCompanionBuilder =
+    DecksCompanion Function({
+      required String id,
+      required String name,
+      required String language,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$DecksTableUpdateCompanionBuilder =
+    DecksCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> language,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$DecksTableFilterComposer extends Composer<_$AppDatabase, $DecksTable> {
+  $$DecksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get language => $composableBuilder(
+    column: $table.language,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DecksTableOrderingComposer
+    extends Composer<_$AppDatabase, $DecksTable> {
+  $$DecksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get language => $composableBuilder(
+    column: $table.language,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DecksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DecksTable> {
+  $$DecksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get language =>
+      $composableBuilder(column: $table.language, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$DecksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DecksTable,
+          DeckRow,
+          $$DecksTableFilterComposer,
+          $$DecksTableOrderingComposer,
+          $$DecksTableAnnotationComposer,
+          $$DecksTableCreateCompanionBuilder,
+          $$DecksTableUpdateCompanionBuilder,
+          (DeckRow, BaseReferences<_$AppDatabase, $DecksTable, DeckRow>),
+          DeckRow,
+          PrefetchHooks Function()
+        > {
+  $$DecksTableTableManager(_$AppDatabase db, $DecksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DecksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DecksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DecksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> language = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DecksCompanion(
+                id: id,
+                name: name,
+                language: language,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String language,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DecksCompanion.insert(
+                id: id,
+                name: name,
+                language: language,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DecksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DecksTable,
+      DeckRow,
+      $$DecksTableFilterComposer,
+      $$DecksTableOrderingComposer,
+      $$DecksTableAnnotationComposer,
+      $$DecksTableCreateCompanionBuilder,
+      $$DecksTableUpdateCompanionBuilder,
+      (DeckRow, BaseReferences<_$AppDatabase, $DecksTable, DeckRow>),
+      DeckRow,
+      PrefetchHooks Function()
+    >;
 typedef $$WordsTableCreateCompanionBuilder =
     WordsCompanion Function({
       required String id,
@@ -2957,10 +3849,231 @@ typedef $$StudySessionsTableProcessedTableManager =
       StudySessionRow,
       PrefetchHooks Function()
     >;
+typedef $$PendingChangesTableCreateCompanionBuilder =
+    PendingChangesCompanion Function({
+      Value<int> id,
+      required String kind,
+      required String deckId,
+      required String payload,
+      required DateTime createdAt,
+      Value<int> attempts,
+    });
+typedef $$PendingChangesTableUpdateCompanionBuilder =
+    PendingChangesCompanion Function({
+      Value<int> id,
+      Value<String> kind,
+      Value<String> deckId,
+      Value<String> payload,
+      Value<DateTime> createdAt,
+      Value<int> attempts,
+    });
+
+class $$PendingChangesTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingChangesTable> {
+  $$PendingChangesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deckId => $composableBuilder(
+    column: $table.deckId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingChangesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingChangesTable> {
+  $$PendingChangesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deckId => $composableBuilder(
+    column: $table.deckId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingChangesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingChangesTable> {
+  $$PendingChangesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get deckId =>
+      $composableBuilder(column: $table.deckId, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+}
+
+class $$PendingChangesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingChangesTable,
+          PendingChangeRow,
+          $$PendingChangesTableFilterComposer,
+          $$PendingChangesTableOrderingComposer,
+          $$PendingChangesTableAnnotationComposer,
+          $$PendingChangesTableCreateCompanionBuilder,
+          $$PendingChangesTableUpdateCompanionBuilder,
+          (
+            PendingChangeRow,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingChangesTable,
+              PendingChangeRow
+            >,
+          ),
+          PendingChangeRow,
+          PrefetchHooks Function()
+        > {
+  $$PendingChangesTableTableManager(
+    _$AppDatabase db,
+    $PendingChangesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingChangesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingChangesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingChangesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> deckId = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+              }) => PendingChangesCompanion(
+                id: id,
+                kind: kind,
+                deckId: deckId,
+                payload: payload,
+                createdAt: createdAt,
+                attempts: attempts,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String kind,
+                required String deckId,
+                required String payload,
+                required DateTime createdAt,
+                Value<int> attempts = const Value.absent(),
+              }) => PendingChangesCompanion.insert(
+                id: id,
+                kind: kind,
+                deckId: deckId,
+                payload: payload,
+                createdAt: createdAt,
+                attempts: attempts,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingChangesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingChangesTable,
+      PendingChangeRow,
+      $$PendingChangesTableFilterComposer,
+      $$PendingChangesTableOrderingComposer,
+      $$PendingChangesTableAnnotationComposer,
+      $$PendingChangesTableCreateCompanionBuilder,
+      $$PendingChangesTableUpdateCompanionBuilder,
+      (
+        PendingChangeRow,
+        BaseReferences<_$AppDatabase, $PendingChangesTable, PendingChangeRow>,
+      ),
+      PendingChangeRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$DecksTableTableManager get decks =>
+      $$DecksTableTableManager(_db, _db.decks);
   $$WordsTableTableManager get words =>
       $$WordsTableTableManager(_db, _db.words);
   $$ReviewsTableTableManager get reviews =>
@@ -2969,4 +4082,6 @@ class $AppDatabaseManager {
       $$StudyDecksTableTableManager(_db, _db.studyDecks);
   $$StudySessionsTableTableManager get studySessions =>
       $$StudySessionsTableTableManager(_db, _db.studySessions);
+  $$PendingChangesTableTableManager get pendingChanges =>
+      $$PendingChangesTableTableManager(_db, _db.pendingChanges);
 }

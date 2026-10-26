@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:lexico/core/error/exception.dart';
 import 'package:lexico/core/error/exception_mapper.dart';
@@ -7,76 +5,75 @@ import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/core/network/api_config.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/core/utils/date_utils.dart';
+import 'package:lexico/core/utils/id_generator.dart';
+import 'package:lexico/features/decks/data/datasources/decks_local_data_source.dart';
+import 'package:lexico/features/vocabulary/data/datasources/local/app_database.dart';
+import 'package:lexico/features/vocabulary/data/datasources/local/local_transaction.dart';
+import 'package:lexico/features/vocabulary/data/datasources/local/pending_changes_local_data_source.dart';
 import 'package:lexico/features/vocabulary/data/datasources/local/starter_deck_data_source.dart';
 import 'package:lexico/features/vocabulary/data/datasources/local/vocabulary_local_data_source.dart';
-import 'package:lexico/features/vocabulary/data/datasources/remote/vocabulary_remote_data_source.dart';
 import 'package:lexico/features/vocabulary/data/mappers/vocabulary_mappers.dart';
+import 'package:lexico/features/vocabulary/data/models/pending_change.dart';
 import 'package:lexico/features/vocabulary/data/models/study_card_row.dart';
-import 'package:lexico/features/vocabulary/data/models/word_dto.dart';
+import 'package:lexico/features/vocabulary/data/sync/sync_engine.dart';
 import 'package:lexico/features/vocabulary/domain/entities/learner_stats.dart';
-import 'package:lexico/features/vocabulary/domain/entities/word_draft.dart';
 import 'package:lexico/features/vocabulary/domain/entities/review_state.dart';
 import 'package:lexico/features/vocabulary/domain/entities/study_card.dart';
+import 'package:lexico/features/vocabulary/domain/entities/sync_conflict.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
+import 'package:lexico/features/vocabulary/domain/entities/word_draft.dart';
 import 'package:lexico/features/vocabulary/domain/repositories/vocabulary_repository.dart';
 
+/// Offline first: reads and writes only touch the device. A write stores
+/// the change and queues it in one transaction, then asks [SyncEngine] to
+/// send it in the background.
 class VocabularyRepositoryImpl implements VocabularyRepository {
   VocabularyRepositoryImpl({
-    required VocabularyRemoteDataSource remote,
     required VocabularyLocalDataSource local,
+    required DecksLocalDataSource decksLocal,
+    required PendingChangesLocalDataSource pending,
+    required LocalTransaction transaction,
+    required SyncEngine sync,
     required StarterDeckDataSource starterDeck,
     String starterDeckId = ApiConfig.defaultDeckId,
     DateTime Function() clock = DateTime.now,
-  }) : _remote = remote,
-       _local = local,
+    IdGenerator newId = uuidV4,
+  }) : _local = local,
+       _decksLocal = decksLocal,
+       _pending = pending,
+       _transaction = transaction,
+       _sync = sync,
        _starterDeck = starterDeck,
        _starterDeckId = starterDeckId,
-       _clock = clock;
+       _clock = clock,
+       _newId = newId;
 
-  final VocabularyRemoteDataSource _remote;
   final VocabularyLocalDataSource _local;
+  final DecksLocalDataSource _decksLocal;
+  final PendingChangesLocalDataSource _pending;
+  final LocalTransaction _transaction;
+  final SyncEngine _sync;
   final StarterDeckDataSource _starterDeck;
 
   /// The deck the bundled starter words belong to.
   final String _starterDeckId;
   final DateTime Function() _clock;
+  final IdGenerator _newId;
 
-  /// Network first, deck by deck; a deck that can't be fetched keeps what is
-  /// already stored. A device with nothing stored at all falls back to the
-  /// bundled deck, if that deck is studied.
+  static const _duplicateExample = ValidationFailure(
+    'This example sentence is already in the deck.',
+  );
+
   @override
   Future<Result<int>> syncDecks() async {
-    final now = _clock();
-
     try {
-      for (final deckId in await _local.studiedDeckIds()) {
-        await _syncDeck(deckId, now);
-      }
+      await _sync.refreshStudiedDecks();
 
       final stored = await _local.wordCount();
       if (stored > 0) return Result.success(stored);
-      return await _seedStarterDeck(now);
+      return await _seedStarterDeck(_clock());
     } on AppException catch (error) {
       return Result.failure(error.toFailure());
-    }
-  }
-
-  /// Refreshes one deck. Only network and server problems are swallowed;
-  /// a local database error still fails the sync.
-  Future<void> _syncDeck(String deckId, DateTime now) async {
-    final List<WordDto> words;
-    try {
-      words = await _remote.fetchWords(deckId);
-    } on CacheException {
-      rethrow;
-    } on AppException catch (error) {
-      debugPrint('Léxico: kept stored words for $deckId — ${error.message}');
-      return;
-    }
-    // An empty reply keeps what is stored rather than leaving nothing to
-    // study.
-    if (words.isNotEmpty) {
-      await _local.replaceDeck(deckId, deckRows(deckId, words), now);
     }
   }
 
@@ -85,11 +82,21 @@ class VocabularyRepositoryImpl implements VocabularyRepository {
       return const Result.success(0);
     }
     final starter = await _starterDeck.load();
-    await _local.replaceDeck(
-      _starterDeckId,
-      deckRows(_starterDeckId, starter),
-      now,
-    );
+    await _transaction(() async {
+      await _decksLocal.addDeck(
+        DeckRow(
+          id: _starterDeckId,
+          name: starter.name,
+          language: starter.language,
+          createdAt: now,
+        ),
+      );
+      await _local.replaceDeck(
+        _starterDeckId,
+        deckRows(_starterDeckId, starter.words),
+        now,
+      );
+    });
     return Result.success(await _local.wordCount());
   }
 
@@ -102,8 +109,8 @@ class VocabularyRepositoryImpl implements VocabularyRepository {
     }
   }
 
-  /// Turning a deck on also fetches its words, so it can be studied at once;
-  /// if that fails the next sync tries again.
+  /// Turning a deck on also tries to fetch its words, so it can be studied
+  /// at once; if that fails the next sync tries again.
   @override
   Future<Result<void>> setDeckStudied(
     String deckId, {
@@ -111,89 +118,119 @@ class VocabularyRepositoryImpl implements VocabularyRepository {
   }) async {
     try {
       await _local.setDeckStudied(deckId, studied: studied);
-      if (studied) await _syncDeck(deckId, _clock());
+      if (studied) await _refreshQuietly(deckId);
       return const Result.success(null);
     } on AppException catch (error) {
       return Result.failure(error.toFailure());
     }
   }
 
+  /// Refreshes [deckId] if the service can be reached. Only a local database
+  /// error is thrown.
+  Future<void> _refreshQuietly(String deckId) async {
+    try {
+      await _sync.refreshDeck(deckId);
+    } on CacheException {
+      rethrow;
+    } on AppException catch (error) {
+      debugPrint('Léxico: kept stored words for $deckId — ${error.message}');
+    }
+  }
+
   @override
   Future<Result<List<VocabWord>>> deckWords(String deckId) async {
     try {
-      final words = await _remote.fetchWords(deckId);
-      return Result.success([
-        for (final word in words) word.toEntity(deckId: deckId),
-      ]);
-    } on ServerException catch (error) {
-      // The deck is gone; stored words of it would only mislead.
-      if (error.code == 'deck_not_found') {
-        return Result.failure(error.toFailure());
-      }
-      return _storedDeckWords(deckId, error);
-    } on AppException catch (error) {
-      return _storedDeckWords(deckId, error);
-    }
-  }
-
-  @override
-  Future<Result<VocabWord>> addWord(String deckId, WordDraft word) async {
-    final List<WordDto> reply;
-    try {
-      reply = await _remote.addWords(deckId, [word]);
-    } on AppException catch (error) {
-      return Result.failure(error.toFailure());
-    }
-    if (reply.length != 1) {
-      return const Result.failure(
-        ServerFailure('The word service did not return the new word.'),
-      );
-    }
-    final created = reply.first;
-
-    // The word is saved on the service either way; a failed local refresh
-    // only delays it until the next sync.
-    try {
-      if ((await _local.studiedDeckIds()).contains(deckId)) {
-        await _syncDeck(deckId, _clock());
-      }
-    } on AppException catch (error) {
-      debugPrint('Léxico: new word not stored yet — ${error.message}');
-    }
-    return Result.success(created.toEntity(deckId: deckId));
-  }
-
-  @override
-  Future<Result<VocabWord>> editWord(VocabWord word, WordDraft draft) async {
-    final WordDto saved;
-    try {
-      saved = await _remote.editWord(word.id, draft);
-    } on AppException catch (error) {
-      return Result.failure(error.toFailure());
-    }
-
-    // Saved on the service either way; a failed local update is fixed by the
-    // next sync. Words that aren't stored make this a no-op.
-    try {
-      await _local.updateWord(saved.id, saved.toContentUpdate());
-    } on AppException catch (error) {
-      debugPrint('Léxico: edited word not stored yet — ${error.message}');
-    }
-    return Result.success(saved.toEntity(deckId: word.deckId));
-  }
-
-  /// The fallback for [deckWords]: the stored copy, if there is one.
-  Future<Result<List<VocabWord>>> _storedDeckWords(
-    String deckId,
-    AppException networkError,
-  ) async {
-    try {
       final rows = await _local.wordsOfDeck(deckId);
-      if (rows.isEmpty) return Result.failure(networkError.toFailure());
       return Result.success([for (final row in rows) row.toEntity()]);
     } on AppException catch (error) {
       return Result.failure(error.toFailure());
     }
+  }
+
+  @override
+  Future<Result<List<VocabWord>>> refreshDeckWords(String deckId) async {
+    try {
+      await _sync.refreshDeck(deckId);
+    } on AppException catch (error) {
+      return Result.failure(error.toFailure());
+    }
+    return deckWords(deckId);
+  }
+
+  @override
+  Future<Result<VocabWord>> addWord(String deckId, WordDraft word) async {
+    final now = _clock();
+    final WordRow? added;
+    try {
+      added = await _transaction(() async {
+        if (await _local.hasQuestionExample(deckId, word.questionExample)) {
+          return null;
+        }
+        final row = WordRow(
+          id: _newId(),
+          deckId: deckId,
+          position: await _local.nextPosition(deckId),
+          questionShort: word.questionShort,
+          answerShort: word.answerShort,
+          questionExample: word.questionExample,
+          answerExample: word.answerExample,
+          showsCount: 0,
+          successesCount: 0,
+          failuresCount: 0,
+        );
+        await _local.insertWord(row, now);
+        await _pending.add(
+          WordAdded(deckId: deckId, wordId: row.id, draft: word),
+          now,
+        );
+        return row;
+      });
+    } on AppException catch (error) {
+      return Result.failure(error.toFailure());
+    }
+    if (added == null) return const Result.failure(_duplicateExample);
+
+    _sync.schedulePush();
+    return Result.success(added.toEntity());
+  }
+
+  @override
+  Future<Result<VocabWord>> editWord(VocabWord word, WordDraft draft) async {
+    try {
+      final duplicate = await _transaction(() async {
+        if (await _local.hasQuestionExample(
+          word.deckId,
+          draft.questionExample,
+          exceptWordId: word.id,
+        )) {
+          return true;
+        }
+        await _local.updateWord(word.id, draft.toTextUpdate());
+        await _pending.add(
+          WordEdited(deckId: word.deckId, wordId: word.id, draft: draft),
+          _clock(),
+        );
+        return false;
+      });
+      if (duplicate) return const Result.failure(_duplicateExample);
+    } on AppException catch (error) {
+      return Result.failure(error.toFailure());
+    }
+
+    _sync.schedulePush();
+    return Result.success(
+      VocabWord(
+        id: word.id,
+        deckId: word.deckId,
+        questionShort: draft.questionShort,
+        answerShort: draft.answerShort,
+        questionExample: draft.questionExample,
+        answerExample: draft.answerExample,
+        showsCount: word.showsCount,
+        successesCount: word.successesCount,
+        failuresCount: word.failuresCount,
+      ),
+    );
   }
 
   @override
@@ -217,32 +254,34 @@ class VocabularyRepositoryImpl implements VocabularyRepository {
     }
   }
 
+  /// Scheduling only depends on the local review, so a slow or missing
+  /// network never holds up the next card. The answer is counted on the
+  /// device at once and sent to the service with the next sync.
   @override
   Future<Result<ReviewState>> saveReview(
     ReviewState state, {
     required bool correct,
   }) async {
     try {
-      await _local.saveReview(state.toRow());
+      await _transaction(() async {
+        await _local.saveReview(state.toRow());
+        final deckId = await _local.deckIdOfWord(state.wordId);
+        if (deckId == null) return;
+        await _local.countAnswer(state.wordId, correct: correct);
+        await _pending.add(
+          WordReviewed(deckId: deckId, wordId: state.wordId, correct: correct),
+          _clock(),
+        );
+      });
     } on AppException catch (error) {
       return Result.failure(error.toFailure());
     }
-    unawaited(_reportAnswer(state.wordId, correct: correct));
+    _sync.schedulePush();
     return Result.success(state);
   }
 
-  /// Sends the answer to the word service in the background, so a slow or
-  /// missing network never holds up the next card. Scheduling only depends
-  /// on the local review, so a lost report costs nothing but the server's
-  /// counters. The call is never retried: the API counts every request.
-  Future<void> _reportAnswer(String wordId, {required bool correct}) async {
-    try {
-      final word = await _remote.submitReview(wordId, correct: correct);
-      await _local.updateWord(word.id, word.toContentUpdate());
-    } on AppException catch (error) {
-      debugPrint('Léxico: answer to $wordId not reported — ${error.message}');
-    }
-  }
+  @override
+  Stream<SyncConflict> syncConflicts() => _sync.conflicts;
 
   @override
   Future<Result<LearnerStats>> learnerStats() async {

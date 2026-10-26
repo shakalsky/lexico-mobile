@@ -8,6 +8,8 @@ import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/watch_sync_conflicts.dart';
 
 import '../../../helpers/fake_decks_repository.dart';
 import '../../../helpers/fake_vocabulary_repository.dart';
@@ -48,6 +50,8 @@ void main() {
               DeckWordsPage.route(
                 _food,
                 getDeckWords: GetDeckWords(vocabulary),
+                refreshDeckWords: RefreshDeckWords(vocabulary),
+                watchSyncConflicts: WatchSyncConflicts(vocabulary),
                 addWord: AddWord(vocabulary),
                 editWord: EditWord(vocabulary),
               ),

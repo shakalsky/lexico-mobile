@@ -23,6 +23,7 @@ dependencies:
   intl: ^0.20.3
   bloc: ^9.2.1
   shared_preferences: ^2.5.6
+  connectivity_plus: ^7.3.2
 
 dev_dependencies:
   flutter_test:

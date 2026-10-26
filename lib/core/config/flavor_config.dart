@@ -15,11 +15,10 @@ class FlavorConfig {
     apiBaseUrl: 'http://192.168.0.159:3000',
   );
 
-  // Points at the dev server until a staging server exists.
   static const FlavorConfig staging = FlavorConfig._(
     flavor: Flavor.staging,
     appTitle: 'Léxico Staging',
-    apiBaseUrl: 'http://192.168.0.159:3000',
+    apiBaseUrl: 'http://192.168.0.159:3001',
   );
 
   final Flavor flavor;

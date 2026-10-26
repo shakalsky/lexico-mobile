@@ -7,8 +7,14 @@ abstract interface class DecksRemoteDataSource {
   /// `GET /decks` → `{ "decks": [ … ] }`, oldest first.
   Future<List<DeckDto>> fetchDecks();
 
-  /// `POST /decks` with `{ "name", "language" }` → `201 { "deck": … }`.
-  Future<DeckDto> createDeck({required String name, required String language});
+  /// `POST /decks` with `{ "id", "name", "language" }` →
+  /// `201 { "deck": … }`. A deck with [id] already there is refused with
+  /// `deck_id_taken`.
+  Future<DeckDto> createDeck({
+    required String id,
+    required String name,
+    required String language,
+  });
 }
 
 class DecksRemoteDataSourceImpl implements DecksRemoteDataSource {
@@ -35,12 +41,13 @@ class DecksRemoteDataSourceImpl implements DecksRemoteDataSource {
 
   @override
   Future<DeckDto> createDeck({
+    required String id,
     required String name,
     required String language,
   }) => guardRequest(() async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/decks',
-      data: {'name': name, 'language': language},
+      data: {'id': id, 'name': name, 'language': language},
     );
     final deck = response.data?['deck'];
     if (deck is! Map<String, dynamic>) {

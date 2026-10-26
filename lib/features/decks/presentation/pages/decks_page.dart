@@ -14,6 +14,8 @@ import 'package:lexico/features/decks/presentation/widgets/new_deck_sheet.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/watch_sync_conflicts.dart';
 import 'package:lexico/features/vocabulary/presentation/widgets/primary_button.dart';
 
 /// The Decks tab: every deck on the word service.
@@ -26,6 +28,8 @@ class DecksPage extends StatelessWidget {
     child: DecksView(
       createDeck: sl<CreateDeck>(),
       getDeckWords: sl<GetDeckWords>(),
+      refreshDeckWords: sl<RefreshDeckWords>(),
+      watchSyncConflicts: sl<WatchSyncConflicts>(),
       addWord: sl<AddWord>(),
       editWord: sl<EditWord>(),
     ),
@@ -36,6 +40,8 @@ class DecksView extends StatelessWidget {
   const DecksView({
     required this.createDeck,
     required this.getDeckWords,
+    required this.refreshDeckWords,
+    required this.watchSyncConflicts,
     required this.addWord,
     required this.editWord,
     super.key,
@@ -46,6 +52,8 @@ class DecksView extends StatelessWidget {
 
   /// Used by the page a deck tile opens.
   final GetDeckWords getDeckWords;
+  final RefreshDeckWords refreshDeckWords;
+  final WatchSyncConflicts watchSyncConflicts;
   final AddWord addWord;
   final EditWord editWord;
 
@@ -102,6 +110,8 @@ class DecksView extends StatelessWidget {
                     DeckWordsPage.route(
                       deck,
                       getDeckWords: getDeckWords,
+                      refreshDeckWords: refreshDeckWords,
+                      watchSyncConflicts: watchSyncConflicts,
                       addWord: addWord,
                       editWord: editWord,
                     ),

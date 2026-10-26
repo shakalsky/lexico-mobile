@@ -39,6 +39,7 @@ StudyCard testCard({
 WordDto testDto({
   String id = 'es-atardecer',
   String? question = 'el atardecer',
+  String example = 'Caminamos por la playa al atardecer.',
   int shows = 0,
   int successes = 0,
   int failures = 0,
@@ -46,7 +47,7 @@ WordDto testDto({
   id: id,
   questionShort: question,
   answerShort: 'sunset',
-  questionExample: 'Caminamos por la playa al atardecer.',
+  questionExample: example,
   answerExample: 'We walked along the beach at sunset.',
   showsCount: shows,
   successesCount: successes,

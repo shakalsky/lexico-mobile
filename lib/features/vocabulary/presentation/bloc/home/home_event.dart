@@ -7,7 +7,7 @@ sealed class HomeEvent extends Equatable {
   List<Object?> get props => const [];
 }
 
-/// First load: make sure a deck exists, then read the stats.
+/// First load: show the stored stats, sync, then show them again.
 final class HomeStarted extends HomeEvent {
   const HomeStarted();
 }

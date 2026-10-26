@@ -116,45 +116,56 @@ void main() {
   });
 
   group('addWords', () {
-    test('posts the words and returns them as created', () async {
-      adapter.reply = () => jsonReply(201, {
-        'words': [_wordJson(id: 'generated')],
-      });
+    test(
+      'posts the words with their ids and returns them as created',
+      () async {
+        adapter.reply = () => jsonReply(201, {
+          'words': [_wordJson()],
+        });
 
-      final created = await remote.addWords('es food', const [
-        WordDraft(
-          questionShort: 'el pan',
-          answerShort: 'bread',
-          questionExample: 'Compro pan cada mañana.',
-          answerExample: 'I buy bread every morning.',
-        ),
-        WordDraft(
-          questionExample: '¿Me pasas la sal?',
-          answerExample: 'Can you pass me the salt?',
-        ),
-      ]);
+        final created = await remote.addWords('es food', const [
+          (
+            id: 'es-pan',
+            draft: WordDraft(
+              questionShort: 'el pan',
+              answerShort: 'bread',
+              questionExample: 'Compro pan cada mañana.',
+              answerExample: 'I buy bread every morning.',
+            ),
+          ),
+          (
+            id: 'es-sal',
+            draft: WordDraft(
+              questionExample: '¿Me pasas la sal?',
+              answerExample: 'Can you pass me the salt?',
+            ),
+          ),
+        ]);
 
-      final request = adapter.lastRequest!;
-      expect(request.method, 'POST');
-      expect(request.path, '/decks/es%20food/words');
-      expect(request.data, {
-        'words': [
-          {
-            'question_short': 'el pan',
-            'answer_short': 'bread',
-            'question_example': 'Compro pan cada mañana.',
-            'answer_example': 'I buy bread every morning.',
-          },
-          {
-            'question_short': null,
-            'answer_short': null,
-            'question_example': '¿Me pasas la sal?',
-            'answer_example': 'Can you pass me the salt?',
-          },
-        ],
-      });
-      expect(created.single.id, 'generated');
-    });
+        final request = adapter.lastRequest!;
+        expect(request.method, 'POST');
+        expect(request.path, '/decks/es%20food/words');
+        expect(request.data, {
+          'words': [
+            {
+              'id': 'es-pan',
+              'question_short': 'el pan',
+              'answer_short': 'bread',
+              'question_example': 'Compro pan cada mañana.',
+              'answer_example': 'I buy bread every morning.',
+            },
+            {
+              'id': 'es-sal',
+              'question_short': null,
+              'answer_short': null,
+              'question_example': '¿Me pasas la sal?',
+              'answer_example': 'Can you pass me the salt?',
+            },
+          ],
+        });
+        expect(created.single.id, 'es-pan');
+      },
+    );
 
     test('surfaces a sentence already in the deck', () async {
       adapter.reply = () => jsonReply(409, {
@@ -164,7 +175,7 @@ void main() {
 
       await expectLater(
         remote.addWords('es-food', const [
-          WordDraft(questionExample: 'x', answerExample: 'y'),
+          (id: 'w', draft: WordDraft(questionExample: 'x', answerExample: 'y')),
         ]),
         throwsA(
           isA<ServerException>().having(

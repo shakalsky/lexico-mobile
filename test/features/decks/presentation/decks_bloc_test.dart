@@ -6,6 +6,7 @@ import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
+import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_studied_deck_ids.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/set_deck_studied.dart';
@@ -21,11 +22,18 @@ void main() {
 
   setUp(() => vocabulary = FakeVocabularyRepository());
 
-  DecksBloc bloc(List<Result<List<Deck>>> results) => DecksBloc(
-    getDecks: GetDecks(FakeDecksRepository(decks: results)),
-    getStudiedDeckIds: GetStudiedDeckIds(vocabulary),
-    setDeckStudied: SetDeckStudied(vocabulary),
-  );
+  DecksBloc bloc(
+    List<Result<List<Deck>>> results, {
+    List<Deck> stored = const [],
+  }) {
+    final decks = FakeDecksRepository(decks: results, stored: stored);
+    return DecksBloc(
+      getDecks: GetDecks(decks),
+      refreshDecks: RefreshDecks(decks),
+      getStudiedDeckIds: GetStudiedDeckIds(vocabulary),
+      setDeckStudied: SetDeckStudied(vocabulary),
+    );
+  }
 
   DecksState ready(List<Deck> decks, {Set<String> studied = const {}}) =>
       DecksState(status: DecksStatus.ready, decks: decks, studiedIds: studied);
@@ -44,7 +52,36 @@ void main() {
     );
 
     blocTest<DecksBloc, DecksState>(
-      'reports a failed load',
+      'shows the stored decks first, then the refreshed list',
+      build: () => bloc(
+        [
+          Result.success([_core, _food]),
+        ],
+        stored: [_core],
+      ),
+      act: (bloc) => bloc.add(const DecksRequested()),
+      expect: () => [
+        const DecksState(status: DecksStatus.loading),
+        ready([_core], studied: {'es-en-core'}),
+        ready([_core, _food], studied: {'es-en-core'}),
+      ],
+    );
+
+    blocTest<DecksBloc, DecksState>(
+      'keeps the stored decks quietly when offline',
+      build: () => bloc(
+        [const Result.failure(NetworkFailure('offline'))],
+        stored: [_core],
+      ),
+      act: (bloc) => bloc.add(const DecksRequested()),
+      expect: () => [
+        const DecksState(status: DecksStatus.loading),
+        ready([_core], studied: {'es-en-core'}),
+      ],
+    );
+
+    blocTest<DecksBloc, DecksState>(
+      'reports a failed load when nothing is stored',
       build: () => bloc([const Result.failure(NetworkFailure('offline'))]),
       act: (bloc) => bloc.add(const DecksRequested()),
       expect: () => [

@@ -12,6 +12,8 @@ import '../../../../helpers/fixtures.dart';
 
 /// A repository that always refuses, to exercise the error path.
 class _BrokenRepository extends FakeVocabularyRepository {
+  _BrokenRepository({super.cards});
+
   @override
   Future<Result<int>> syncDecks() async =>
       const Result.failure(NetworkFailure('offline'));
@@ -48,6 +50,18 @@ void main() {
     expect: () => [
       const HomeState(status: HomeStatus.loading),
       const HomeState(status: HomeStatus.failure, message: 'offline'),
+    ],
+  );
+
+  blocTest<HomeBloc, HomeState>(
+    'keeps the stored stats on screen when the sync fails',
+    build: () => buildBloc(_BrokenRepository(cards: testDeck(3))),
+    act: (bloc) => bloc.add(const HomeStarted()),
+    expect: () => [
+      const HomeState(status: HomeStatus.loading),
+      isA<HomeState>()
+          .having((s) => s.status, 'status', HomeStatus.ready)
+          .having((s) => s.stats.wordCount, 'wordCount', 3),
     ],
   );
 

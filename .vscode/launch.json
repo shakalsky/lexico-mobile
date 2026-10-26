@@ -8,12 +8,12 @@
       "program": "lib/main_dev.dart",
       "args": ["--flavor", "dev"]
     },
-    {
-      "name": "lexico (staging)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main_staging.dart",
-      "args": ["--flavor", "staging"]
-    }
+    // {
+    //   "name": "lexico (staging)",
+    //   "request": "launch",
+    //   "type": "dart",
+    //   "program": "lib/main_staging.dart",
+    //   "args": ["--flavor", "staging"]
+    // }
   ]
 }

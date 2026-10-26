@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:lexico/core/error/exception.dart';
 import 'package:lexico/features/vocabulary/data/datasources/local/app_database.dart';
+import 'package:lexico/features/vocabulary/data/datasources/local/local_transaction.dart';
 import 'package:lexico/features/vocabulary/data/models/study_card_row.dart';
 import 'package:lexico/features/vocabulary/domain/entities/review_state.dart';
 
@@ -14,6 +14,27 @@ abstract interface class VocabularyLocalDataSource {
   /// and progress. Does nothing if the word is not stored.
   Future<void> updateWord(String id, WordsCompanion changes);
 
+  /// Stores a new word, due at once.
+  Future<void> insertWord(WordRow word, DateTime now);
+
+  /// The position after the last word of [deckId].
+  Future<int> nextPosition(String deckId);
+
+  /// Whether a word of [deckId] other than [exceptWordId] has this exact
+  /// [questionExample]. The service refuses such duplicates.
+  Future<bool> hasQuestionExample(
+    String deckId,
+    String questionExample, {
+    String? exceptWordId,
+  });
+
+  /// The deck [wordId] belongs to, or `null` if it is not stored.
+  Future<String?> deckIdOfWord(String wordId);
+
+  /// Counts one answer in the word's counters, as the service will once it
+  /// hears of it.
+  Future<void> countAnswer(String wordId, {required bool correct});
+
   /// The decks the learner studies. Everything below that reads words or
   /// progress only looks at these decks.
   Future<Set<String>> studiedDeckIds();
@@ -21,6 +42,10 @@ abstract interface class VocabularyLocalDataSource {
   /// Adds [deckId] to the studied decks, or removes it. Removing keeps the
   /// deck's words and progress for when it is studied again.
   Future<void> setDeckStudied(String deckId, {required bool studied});
+
+  /// Forgets [deckId] entirely: the deck, its words, their progress, and its
+  /// place among the studied decks. For decks the service no longer has.
+  Future<void> deleteDeck(String deckId);
 
   /// Words stored for the studied decks.
   Future<int> wordCount();
@@ -93,6 +118,79 @@ class VocabularyLocalDataSourceImpl implements VocabularyLocalDataSource {
   );
 
   @override
+  Future<void> insertWord(WordRow word, DateTime now) => _guard(
+    () => _db.transaction(() async {
+      await _db.into(_db.words).insert(word);
+      await _db
+          .into(_db.reviews)
+          .insert(
+            ReviewsCompanion.insert(
+              wordId: word.id,
+              dueAt: now,
+              easeFactor: const Value(ReviewState.defaultEaseFactor),
+            ),
+          );
+    }),
+  );
+
+  @override
+  Future<int> nextPosition(String deckId) => _guard(() async {
+    final last = _db.words.position.max();
+    final row =
+        await (_db.selectOnly(_db.words)
+              ..addColumns([last])
+              ..where(_db.words.deckId.equals(deckId)))
+            .getSingle();
+    final position = row.read(last);
+    return position == null ? 0 : position + 1;
+  });
+
+  @override
+  Future<bool> hasQuestionExample(
+    String deckId,
+    String questionExample, {
+    String? exceptWordId,
+  }) => _guard(() async {
+    final count = await _db.words
+        .count(
+          where: (t) {
+            final same =
+                t.deckId.equals(deckId) &
+                t.questionExample.equals(questionExample);
+            return exceptWordId == null
+                ? same
+                : same & t.id.equals(exceptWordId).not();
+          },
+        )
+        .getSingle();
+    return count > 0;
+  });
+
+  @override
+  Future<String?> deckIdOfWord(String wordId) => _guard(() async {
+    final query = _db.selectOnly(_db.words)
+      ..addColumns([_db.words.deckId])
+      ..where(_db.words.id.equals(wordId));
+    final row = await query.getSingleOrNull();
+    return row?.read(_db.words.deckId);
+  });
+
+  @override
+  Future<void> countAnswer(String wordId, {required bool correct}) => _guard(
+    () => (_db.update(_db.words)..where((t) => t.id.equals(wordId))).write(
+      WordsCompanion.custom(
+        showsCount: _db.words.showsCount + const Constant(1),
+        successesCount: correct
+            ? _db.words.successesCount + const Constant(1)
+            : null,
+        failuresCount: correct
+            ? null
+            : _db.words.failuresCount + const Constant(1),
+      ),
+    ),
+  );
+
+  @override
   Future<Set<String>> studiedDeckIds() => _guard(() async {
     final rows = await _db.select(_db.studyDecks).get();
     return {for (final row in rows) row.deckId};
@@ -114,6 +212,18 @@ class VocabularyLocalDataSourceImpl implements VocabularyLocalDataSource {
           )..where((t) => t.deckId.equals(deckId))).go();
         }
       });
+
+  @override
+  Future<void> deleteDeck(String deckId) => _guard(
+    () => _db.transaction(() async {
+      // Reviews go with their words (ON DELETE CASCADE).
+      await (_db.delete(_db.words)..where((t) => t.deckId.equals(deckId))).go();
+      await (_db.delete(
+        _db.studyDecks,
+      )..where((t) => t.deckId.equals(deckId))).go();
+      await (_db.delete(_db.decks)..where((t) => t.id.equals(deckId))).go();
+    }),
+  );
 
   /// True for words that belong to a studied deck.
   Expression<bool> get _inStudiedDeck => _db.words.deckId.isInQuery(
@@ -262,14 +372,5 @@ class VocabularyLocalDataSourceImpl implements VocabularyLocalDataSource {
   Future<void> insertSession(StudySessionsCompanion session) =>
       _guard(() => _db.into(_db.studySessions).insert(session));
 
-  /// Every database error leaves this class as a [CacheException].
-  Future<T> _guard<T>(Future<T> Function() body) async {
-    try {
-      return await body();
-    } on CacheException {
-      rethrow;
-    } catch (error) {
-      throw CacheException('Local database error: $error');
-    }
-  }
+  Future<T> _guard<T>(Future<T> Function() body) => guardLocal(body);
 }
