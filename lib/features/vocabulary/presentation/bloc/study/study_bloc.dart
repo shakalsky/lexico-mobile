@@ -72,6 +72,7 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
           cards: cards,
           startedAt: _clock(),
           repeatMissedWords: repeatMissedWords,
+          showMissPictures: preferences.showMissPictures,
         ),
       ),
     );

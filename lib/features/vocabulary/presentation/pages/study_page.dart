@@ -149,7 +149,11 @@ class _StudyStackState extends State<_StudyStack> {
             right: 0,
             bottom: 0,
             child: Center(
-              child: SessionToast(toast: state.toast, messageLift: 8),
+              child: SessionToast(
+                toast: state.toast,
+                messageLift: 8,
+                showMissPictures: state.showMissPictures,
+              ),
             ),
           ),
         ],

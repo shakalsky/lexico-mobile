@@ -98,7 +98,7 @@ void main() {
     expect(find.text('new'), findsOneWidget);
   });
 
-  testWidgets('a word never answered right shows a dash, not 0%', (
+  testWidgets('a word never answered right shows no accuracy, not 0%', (
     tester,
   ) async {
     const missed = VocabWord(
@@ -115,7 +115,7 @@ void main() {
       const Result.success([missed]),
     ]);
 
-    expect(find.text('-'), findsOneWidget);
+    expect(find.text('-'), findsNothing);
     expect(find.text('0%'), findsNothing);
     expect(find.text('2'), findsOneWidget);
   });

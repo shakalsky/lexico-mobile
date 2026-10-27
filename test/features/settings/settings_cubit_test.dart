@@ -6,6 +6,7 @@ import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/features/settings/domain/entities/study_preferences.dart';
 import 'package:lexico/features/settings/domain/usecases/get_study_preferences.dart';
 import 'package:lexico/features/settings/domain/usecases/set_repeat_missed_words.dart';
+import 'package:lexico/features/settings/domain/usecases/set_show_miss_pictures.dart';
 import 'package:lexico/features/settings/domain/usecases/set_words_per_session.dart';
 import 'package:lexico/features/settings/presentation/cubit/settings_cubit.dart';
 
@@ -22,6 +23,7 @@ void main() {
       getStudyPreferences: GetStudyPreferences(repository),
       setRepeatMissedWords: SetRepeatMissedWords(repository),
       setWordsPerSession: SetWordsPerSession(repository),
+      setShowMissPictures: SetShowMissPictures(repository),
     );
   }
 
@@ -72,6 +74,19 @@ void main() {
           .having((s) => s.preferences.repeatMissedWords, 'repeat', isFalse)
           .having((s) => s.message, 'message', isNotNull),
     ],
+  );
+
+  blocTest<SettingsCubit, SettingsState>(
+    'turning wrong-answer pictures off saves it',
+    build: buildCubit,
+    act: (cubit) => cubit.showMissPicturesChanged(enabled: false),
+    expect: () => const [
+      SettingsState(
+        status: SettingsStatus.ready,
+        preferences: StudyPreferences(showMissPictures: false),
+      ),
+    ],
+    verify: (_) => expect(repository.preferences.showMissPictures, isFalse),
   );
 
   blocTest<SettingsCubit, SettingsState>(

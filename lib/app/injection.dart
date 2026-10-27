@@ -18,6 +18,7 @@ import 'package:lexico/features/settings/data/repositories/settings_repository_i
 import 'package:lexico/features/settings/domain/repositories/settings_repository.dart';
 import 'package:lexico/features/settings/domain/usecases/get_study_preferences.dart';
 import 'package:lexico/features/settings/domain/usecases/set_repeat_missed_words.dart';
+import 'package:lexico/features/settings/domain/usecases/set_show_miss_pictures.dart';
 import 'package:lexico/features/settings/domain/usecases/set_words_per_session.dart';
 import 'package:lexico/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:lexico/features/vocabulary/data/datasources/local/app_database.dart';
@@ -139,6 +140,7 @@ void configureDependencies(FlavorConfig config) {
     ..registerLazySingleton(() => GetStudyPreferences(sl()))
     ..registerLazySingleton(() => SetRepeatMissedWords(sl()))
     ..registerLazySingleton(() => SetWordsPerSession(sl()))
+    ..registerLazySingleton(() => SetShowMissPictures(sl()))
     // ── Presentation ────────────────────────────────────────────────────
     ..registerFactory(
       () => HomeBloc(syncVocabulary: sl(), getLearnerStats: sl()),
@@ -165,6 +167,7 @@ void configureDependencies(FlavorConfig config) {
         getStudyPreferences: sl(),
         setRepeatMissedWords: sl(),
         setWordsPerSession: sl(),
+        setShowMissPictures: sl(),
       ),
     );
 }

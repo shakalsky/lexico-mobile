@@ -5,6 +5,7 @@ class StudyPreferences extends Equatable {
   const StudyPreferences({
     this.repeatMissedWords = false,
     this.wordsPerSession = defaultWordsPerSession,
+    this.showMissPictures = true,
   });
 
   static const int defaultWordsPerSession = 8;
@@ -24,12 +25,23 @@ class StudyPreferences extends Equatable {
   /// How many cards one study session deals at most.
   final int wordsPerSession;
 
-  StudyPreferences copyWith({bool? repeatMissedWords, int? wordsPerSession}) =>
-      StudyPreferences(
-        repeatMissedWords: repeatMissedWords ?? this.repeatMissedWords,
-        wordsPerSession: wordsPerSession ?? this.wordsPerSession,
-      );
+  /// A random picture pops up after a wrong answer.
+  final bool showMissPictures;
+
+  StudyPreferences copyWith({
+    bool? repeatMissedWords,
+    int? wordsPerSession,
+    bool? showMissPictures,
+  }) => StudyPreferences(
+    repeatMissedWords: repeatMissedWords ?? this.repeatMissedWords,
+    wordsPerSession: wordsPerSession ?? this.wordsPerSession,
+    showMissPictures: showMissPictures ?? this.showMissPictures,
+  );
 
   @override
-  List<Object?> get props => [repeatMissedWords, wordsPerSession];
+  List<Object?> get props => [
+    repeatMissedWords,
+    wordsPerSession,
+    showMissPictures,
+  ];
 }

@@ -8,4 +8,6 @@ abstract interface class SettingsRepository {
   Future<Result<void>> setRepeatMissedWords({required bool enabled});
 
   Future<Result<void>> setWordsPerSession(int count);
+
+  Future<Result<void>> setShowMissPictures({required bool enabled});
 }

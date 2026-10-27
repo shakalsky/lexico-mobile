@@ -16,6 +16,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
       const defaults = StudyPreferences();
       final repeat = await _local.repeatMissedWords();
       final count = await _local.wordsPerSession();
+      final pictures = await _local.showMissPictures();
       return Result.success(
         StudyPreferences(
           repeatMissedWords: repeat ?? defaults.repeatMissedWords,
@@ -24,6 +25,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
               count != null && StudyPreferences.isValidWordsPerSession(count)
               ? count
               : defaults.wordsPerSession,
+          showMissPictures: pictures ?? defaults.showMissPictures,
         ),
       );
     } on AppException catch (error) {
@@ -38,6 +40,10 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<Result<void>> setWordsPerSession(int count) =>
       _write(() => _local.setWordsPerSession(count));
+
+  @override
+  Future<Result<void>> setShowMissPictures({required bool enabled}) =>
+      _write(() => _local.setShowMissPictures(enabled: enabled));
 
   Future<Result<void>> _write(Future<void> Function() body) async {
     try {

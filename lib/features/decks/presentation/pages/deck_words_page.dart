@@ -163,7 +163,7 @@ class _Header extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(deck.name, style: AppTypography.display(32)),
+          Text(deck.name, style: AppTypography.word(26)),
           const SizedBox(height: 10),
           Text(
             details,
@@ -344,15 +344,17 @@ class _WordScore extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
-          percent == 0 ? '-' : '$percent%',
-          style: AppTypography.body(
-            13.5,
-            color: percent >= 70 ? AppColors.accentBright : AppColors.danger,
-            weight: FontWeight.w600,
+        if (percent > 0) ...[
+          Text(
+            '$percent%',
+            style: AppTypography.body(
+              13.5,
+              color: percent >= 70 ? AppColors.accentBright : AppColors.danger,
+              weight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
+          const SizedBox(height: 2),
+        ],
         Semantics(
           label: 'Seen $shows times',
           excludeSemantics: true,

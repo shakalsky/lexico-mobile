@@ -38,6 +38,7 @@ class StudyState extends Equatable {
     this.message,
     this.startedAt,
     this.repeatMissedWords = false,
+    this.showMissPictures = true,
   });
 
   final StudyStatus status;
@@ -55,6 +56,10 @@ class StudyState extends Equatable {
   /// Missed cards go back to the end of [cards] until answered correctly.
   /// Read once when the session starts.
   final bool repeatMissedWords;
+
+  /// A wrong answer pops up a random picture. Read once when the session
+  /// starts.
+  final bool showMissPictures;
 
   StudyCard? get currentCard => index < cards.length ? cards[index] : null;
 
@@ -104,6 +109,7 @@ class StudyState extends Equatable {
     message: message,
     startedAt: startedAt ?? this.startedAt,
     repeatMissedWords: repeatMissedWords,
+    showMissPictures: showMissPictures,
   );
 
   @override
@@ -118,5 +124,6 @@ class StudyState extends Equatable {
     message,
     startedAt,
     repeatMissedWords,
+    showMissPictures,
   ];
 }

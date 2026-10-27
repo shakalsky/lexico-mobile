@@ -397,7 +397,7 @@ class _DeckTileState extends State<_DeckTile>
             children: [
               Text(
                 deck.name,
-                style: AppTypography.display(22),
+                style: AppTypography.word(18),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

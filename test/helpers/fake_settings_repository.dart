@@ -32,4 +32,12 @@ class FakeSettingsRepository implements SettingsRepository {
     preferences = preferences.copyWith(wordsPerSession: count);
     return const Result.success(null);
   }
+
+  @override
+  Future<Result<void>> setShowMissPictures({required bool enabled}) async {
+    final failure = this.failure;
+    if (failure != null) return Result.failure(failure);
+    preferences = preferences.copyWith(showMissPictures: enabled);
+    return const Result.success(null);
+  }
 }

@@ -5,6 +5,7 @@ import 'package:lexico/core/usecase/use_case.dart';
 import 'package:lexico/features/settings/domain/entities/study_preferences.dart';
 import 'package:lexico/features/settings/domain/usecases/get_study_preferences.dart';
 import 'package:lexico/features/settings/domain/usecases/set_repeat_missed_words.dart';
+import 'package:lexico/features/settings/domain/usecases/set_show_miss_pictures.dart';
 import 'package:lexico/features/settings/domain/usecases/set_words_per_session.dart';
 
 enum SettingsStatus { loading, ready }
@@ -32,14 +33,17 @@ class SettingsCubit extends Cubit<SettingsState> {
     required GetStudyPreferences getStudyPreferences,
     required SetRepeatMissedWords setRepeatMissedWords,
     required SetWordsPerSession setWordsPerSession,
+    required SetShowMissPictures setShowMissPictures,
   }) : _getStudyPreferences = getStudyPreferences,
        _setRepeatMissedWords = setRepeatMissedWords,
        _setWordsPerSession = setWordsPerSession,
+       _setShowMissPictures = setShowMissPictures,
        super(const SettingsState());
 
   final GetStudyPreferences _getStudyPreferences;
   final SetRepeatMissedWords _setRepeatMissedWords;
   final SetWordsPerSession _setWordsPerSession;
+  final SetShowMissPictures _setShowMissPictures;
 
   Future<void> load() async {
     final result = await _getStudyPreferences(const NoParams());
@@ -61,6 +65,12 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> repeatMissedWordsChanged({required bool enabled}) => _save(
     state.preferences.copyWith(repeatMissedWords: enabled),
     () => _setRepeatMissedWords(enabled),
+  );
+
+  /// Flips the switch right away and rolls it back if saving fails.
+  Future<void> showMissPicturesChanged({required bool enabled}) => _save(
+    state.preferences.copyWith(showMissPictures: enabled),
+    () => _setShowMissPictures(enabled),
   );
 
   /// Shows the new count right away and rolls it back if saving fails.

@@ -57,6 +57,18 @@ class SettingsPage extends StatelessWidget {
                         .repeatMissedWordsChanged(enabled: enabled)
                   : null,
             ),
+            const SizedBox(height: 12),
+            _SwitchTile(
+              key: const Key('show-miss-pictures'),
+              title: 'Wrong-answer notifications',
+              subtitle: 'Show a random picture when you miss a word.',
+              value: state.preferences.showMissPictures,
+              onChanged: state.status == SettingsStatus.ready
+                  ? (enabled) => context
+                        .read<SettingsCubit>()
+                        .showMissPicturesChanged(enabled: enabled)
+                  : null,
+            ),
             const SizedBox(height: 28),
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 10),

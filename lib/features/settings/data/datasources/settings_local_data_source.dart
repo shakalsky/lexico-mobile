@@ -11,6 +11,11 @@ abstract interface class SettingsLocalDataSource {
   Future<int?> wordsPerSession();
 
   Future<void> setWordsPerSession(int count);
+
+  /// `null` when the learner never changed the setting.
+  Future<bool?> showMissPictures();
+
+  Future<void> setShowMissPictures({required bool enabled});
 }
 
 class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
@@ -19,6 +24,7 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
 
   static const String repeatMissedWordsKey = 'study.repeatMissedWords';
   static const String wordsPerSessionKey = 'study.wordsPerSession';
+  static const String showMissPicturesKey = 'study.showMissPictures';
 
   final SharedPreferencesAsync _preferences;
 
@@ -37,6 +43,14 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   @override
   Future<void> setWordsPerSession(int count) =>
       _guard(() => _preferences.setInt(wordsPerSessionKey, count));
+
+  @override
+  Future<bool?> showMissPictures() =>
+      _guard(() => _preferences.getBool(showMissPicturesKey));
+
+  @override
+  Future<void> setShowMissPictures({required bool enabled}) =>
+      _guard(() => _preferences.setBool(showMissPicturesKey, enabled));
 
   Future<T> _guard<T>(Future<T> Function() body) async {
     try {
