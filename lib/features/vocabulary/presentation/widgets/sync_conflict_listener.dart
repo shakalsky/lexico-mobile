@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lexico/core/widgets/app_notice.dart';
 import 'package:lexico/features/vocabulary/domain/entities/sync_conflict.dart';
 import 'package:lexico/features/vocabulary/presentation/sync_conflict_message.dart';
 
-/// Tells the learner, in a snack bar, about each change made offline that
+/// Tells the learner, in an app notice, about each change made offline that
 /// the word service refused once it was sent. Wraps the whole app, so the
 /// message shows whichever screen is open.
 class SyncConflictListener extends StatefulWidget {
@@ -31,12 +32,14 @@ class _SyncConflictListenerState extends State<SyncConflictListener> {
   }
 
   void _show(SyncConflict conflict) {
+    if (!mounted) return;
     // Several conflicts queue up rather than replace each other.
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(
-        content: Text(conflict.message),
-        duration: const Duration(seconds: 6),
-      ),
+    AppNotices.show(
+      context,
+      conflict.message,
+      tone: AppNoticeTone.error,
+      duration: const Duration(seconds: 6),
+      queue: true,
     );
   }
 

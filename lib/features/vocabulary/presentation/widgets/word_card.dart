@@ -93,10 +93,7 @@ class _CardFront extends StatelessWidget {
       eyebrow: word.isSentence ? 'Sentence' : StudyRules.courseLabel,
       eyebrowColor: AppColors.textGhost,
       level: level,
-      headline: Text(
-        word.question,
-        style: AppTypography.display(word.isSentence ? 32 : 46),
-      ),
+      headline: Text(word.question, style: AppTypography.word(26)),
       detail: word.questionDetail,
       detailColor: AppColors.textSecondary,
       dividerColor: AppColors.hairlineStrong,
@@ -128,10 +125,7 @@ class _CardBack extends StatelessWidget {
         children: [
           Text(
             word.answer,
-            style: AppTypography.display(
-              word.answerShort == null ? 30 : 42,
-              color: AppColors.textOnBack,
-            ),
+            style: AppTypography.word(26, color: AppColors.textOnBack),
           ),
           const SizedBox(height: 8),
           Text(

@@ -103,7 +103,7 @@ class _WordSheetState extends State<WordSheet> {
             fields: [
               FormTextField(
                 key: const Key('word-form-example'),
-                label: 'Example sentence',
+                label: 'front text',
                 hint: 'e.g. Compro pan cada mañana.',
                 controller: _example,
                 enabled: !saving,
@@ -114,7 +114,7 @@ class _WordSheetState extends State<WordSheet> {
               ),
               FormTextField(
                 key: const Key('word-form-translation'),
-                label: 'Translation',
+                label: 'back text',
                 hint: 'e.g. I buy bread every morning.',
                 controller: _translation,
                 enabled: !saving,
@@ -133,7 +133,7 @@ class _WordSheetState extends State<WordSheet> {
               if (_showShortFields) ...[
                 FormTextField(
                   key: const Key('word-form-word'),
-                  label: 'Word',
+                  label: 'front accent',
                   note: 'leave empty for a sentence card',
                   hint: 'e.g. el pan',
                   controller: _word,
@@ -141,7 +141,7 @@ class _WordSheetState extends State<WordSheet> {
                 ),
                 FormTextField(
                   key: const Key('word-form-meaning'),
-                  label: 'Meaning',
+                  label: 'back accent',
                   hint: 'e.g. bread',
                   controller: _meaning,
                   enabled: !saving,
@@ -190,7 +190,7 @@ class _ShortFieldsToggle extends StatelessWidget {
                   children: [
                     Text.rich(
                       TextSpan(
-                        text: 'WORD AND MEANING',
+                        text: 'ACCENT',
                         children: [
                           TextSpan(
                             text: '  ·  optional',

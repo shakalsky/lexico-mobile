@@ -17,7 +17,8 @@ class SwipeDeckController {
   void swipe(ReviewGrade grade) => _handler?.call(grade);
 }
 
-/// The card stack: the top card is draggable, two more peek behind it.
+/// The card stack: the top card is draggable, two more sit directly behind it
+/// at the same size.
 ///
 /// The deck owns the gesture and the animation; it reports an answer only
 /// once the card has left the screen, so the bloc never advances mid-flight.
@@ -253,20 +254,16 @@ class _StackedCard extends StatelessWidget {
   final int depth;
 
   @override
+  // Same size and position as the top card, so it is hidden until the top
+  // card is swiped away.
   Widget build(BuildContext context) => Positioned.fill(
     child: IgnorePointer(
       child: Opacity(
         opacity: depth == 2 ? 0.45 : 1,
-        child: Transform.translate(
-          offset: Offset(0, depth * 12),
-          child: Transform.scale(
-            scale: 1 - depth * 0.04,
-            child: WordCard(
-              word: card.word,
-              level: card.review.level,
-              isRevealed: false,
-            ),
-          ),
+        child: WordCard(
+          word: card.word,
+          level: card.review.level,
+          isRevealed: false,
         ),
       ),
     ),

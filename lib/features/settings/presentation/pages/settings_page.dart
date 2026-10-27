@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lexico/app/injection.dart';
 import 'package:lexico/core/theme/app_colors.dart';
 import 'package:lexico/core/theme/app_typography.dart';
+import 'package:lexico/core/widgets/app_notice.dart';
 import 'package:lexico/features/decks/presentation/widgets/form_sheet.dart';
 import 'package:lexico/features/settings/domain/entities/study_preferences.dart';
 import 'package:lexico/features/settings/presentation/cubit/settings_cubit.dart';
@@ -28,9 +29,8 @@ class SettingsPage extends StatelessWidget {
       body: BlocConsumer<SettingsCubit, SettingsState>(
         listenWhen: (previous, current) =>
             current.message != null && previous.message != current.message,
-        listener: (context, state) => ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.message!))),
+        listener: (context, state) =>
+            AppNotices.show(context, state.message!, tone: AppNoticeTone.error),
         builder: (context, state) => ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
           children: [

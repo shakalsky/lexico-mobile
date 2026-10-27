@@ -7,9 +7,14 @@ abstract final class AppTypography {
   static const String serif = 'InstrumentSerif';
   static const String sans = 'Manrope';
 
+  /// InstrumentSerif has no Cyrillic glyphs. Without a fallback, Cyrillic
+  /// words render in the system sans font and look out of place.
+  static const List<String> serifFallback = ['PlayfairDisplay'];
+
   static TextStyle display(double size, {Color color = AppColors.textBright}) =>
       TextStyle(
         fontFamily: serif,
+        fontFamilyFallback: serifFallback,
         fontSize: size,
         height: 1.05,
         color: color,
@@ -36,6 +41,17 @@ abstract final class AppTypography {
     letterSpacing: letterSpacing,
     fontVariations: [FontVariation('wght', weight.value.toDouble())],
   );
+
+  /// Vocabulary words and sentences on word tiles and flashcards.
+  /// Manrope reads larger than InstrumentSerif, so callers use smaller sizes.
+  static TextStyle word(double size, {Color color = AppColors.textBright}) =>
+      body(
+        size,
+        color: color,
+        weight: FontWeight.w600,
+        height: 1.15,
+        letterSpacing: -0.02 * size,
+      );
 
   /// Small uppercase eyebrow labels ("TODAY", "SESSION COMPLETE").
   static TextStyle eyebrow({

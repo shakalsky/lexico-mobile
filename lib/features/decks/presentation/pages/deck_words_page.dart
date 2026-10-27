@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lexico/core/theme/app_colors.dart';
 import 'package:lexico/core/theme/app_typography.dart';
+import 'package:lexico/core/widgets/app_notice.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/presentation/cubit/deck_words_cubit.dart';
 import 'package:lexico/features/decks/presentation/widgets/word_sheet.dart';
@@ -49,7 +50,7 @@ class DeckWordsPage extends StatelessWidget {
 
   Future<void> _addWord(BuildContext context) async {
     final cubit = context.read<DeckWordsCubit>();
-    final messenger = ScaffoldMessenger.of(context);
+    final notices = AppNotices.of(context);
 
     final word = await WordSheet.showAdd(
       context,
@@ -59,12 +60,12 @@ class DeckWordsPage extends StatelessWidget {
     if (word == null) return;
 
     await cubit.wordAdded(word);
-    _confirm(messenger, 'Added “${word.question}”');
+    notices.show('Added “${word.question}”');
   }
 
   Future<void> _editWord(BuildContext context, VocabWord word) async {
     final cubit = context.read<DeckWordsCubit>();
-    final messenger = ScaffoldMessenger.of(context);
+    final notices = AppNotices.of(context);
 
     final saved = await WordSheet.showEdit(
       context,
@@ -75,12 +76,8 @@ class DeckWordsPage extends StatelessWidget {
     if (saved == null || saved == word) return;
 
     cubit.wordEdited(saved);
-    _confirm(messenger, 'Saved “${saved.question}”');
+    notices.show('Saved “${saved.question}”');
   }
-
-  void _confirm(ScaffoldMessengerState messenger, String text) => messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -108,9 +105,8 @@ class DeckWordsPage extends StatelessWidget {
     body: BlocConsumer<DeckWordsCubit, DeckWordsState>(
       listenWhen: (previous, current) =>
           current.notice != null && current.notice != previous.notice,
-      listener: (context, state) => ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(state.notice!))),
+      listener: (context, state) =>
+          AppNotices.show(context, state.notice!, tone: AppNoticeTone.error),
       builder: (context, state) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -275,8 +271,8 @@ class _WordTile extends StatelessWidget {
             children: [
               Text(
                 word.question,
-                style: AppTypography.display(
-                  word.isSentence ? 18 : 21,
+                style: AppTypography.word(
+                  word.isSentence ? 15.5 : 17,
                   color: AppColors.textPrimary,
                 ),
               ),

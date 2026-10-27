@@ -117,32 +117,43 @@ class _StudyStackState extends State<_StudyStack> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 26),
-      child: Column(
+      child: Stack(
         children: [
-          _SessionHeader(
-            progress: state.progress,
-            positionLabel: '${state.position}/${state.total}',
-            onQuit: () =>
-                context.read<StudyBloc>().add(const StudySessionQuit()),
+          Column(
+            children: [
+              _SessionHeader(
+                progress: state.progress,
+                positionLabel: '${state.position}/${state.total}',
+                onQuit: () =>
+                    context.read<StudyBloc>().add(const StudySessionQuit()),
+              ),
+              const SizedBox(height: 26),
+              Expanded(
+                child: SwipeDeck(
+                  controller: _deck,
+                  cards: state.visibleCards,
+                  isRevealed: state.isRevealed,
+                  onFlip: () =>
+                      context.read<StudyBloc>().add(const StudyCardFlipped()),
+                  onAnswered: _answer,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _AnswerButtons(
+                onReview: () => _deck.swipe(ReviewGrade.needsReview),
+                onKnewIt: () => _deck.swipe(ReviewGrade.knewIt),
+              ),
+            ],
           ),
-          const SizedBox(height: 26),
-          Expanded(
-            child: SwipeDeck(
-              controller: _deck,
-              cards: state.visibleCards,
-              isRevealed: state.isRevealed,
-              onFlip: () =>
-                  context.read<StudyBloc>().add(const StudyCardFlipped()),
-              onAnswered: _answer,
+          // Floats over the answer buttons, so the deck never changes size.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Center(
+              child: SessionToast(toast: state.toast, messageLift: 8),
             ),
           ),
-          const SizedBox(height: 20),
-          _AnswerButtons(
-            onReview: () => _deck.swipe(ReviewGrade.needsReview),
-            onKnewIt: () => _deck.swipe(ReviewGrade.knewIt),
-          ),
-          const SizedBox(height: 14),
-          SessionToast(toast: state.toast),
         ],
       ),
     );

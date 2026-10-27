@@ -31,6 +31,8 @@ abstract final class AppColors {
   static const Color textGhostBack = Color(0xFF41645A);
 
   static const Color caution = Color(0xFFE8B661);
+  static const Color warning = Color(0xFFF5973D);
+  static const Color warningBright = Color(0xFFFFB06B);
   static const Color danger = Color(0xFFFF8A8A);
   static const Color dangerBright = Color(0xFFFF9E9E);
 

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:lexico/app/injection.dart';
 import 'package:lexico/core/theme/app_colors.dart';
 import 'package:lexico/core/theme/app_typography.dart';
+import 'package:lexico/core/widgets/app_notice.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
@@ -59,15 +60,13 @@ class DecksView extends StatelessWidget {
 
   Future<void> _addDeck(BuildContext context) async {
     final bloc = context.read<DecksBloc>();
-    final messenger = ScaffoldMessenger.of(context);
+    final notices = AppNotices.of(context);
 
     final deck = await NewDeckSheet.show(context, createDeck: createDeck);
     if (deck == null) return;
 
     bloc.add(DeckAdded(deck));
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('Created “${deck.name}”')));
+    notices.show('Created “${deck.name}”');
   }
 
   @override
@@ -92,9 +91,8 @@ class DecksView extends StatelessWidget {
       child: BlocConsumer<DecksBloc, DecksState>(
         listenWhen: (previous, current) =>
             current.notice != null && current.notice != previous.notice,
-        listener: (context, state) => ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(state.notice!))),
+        listener: (context, state) =>
+            AppNotices.show(context, state.notice!, tone: AppNoticeTone.error),
         builder: (context, state) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

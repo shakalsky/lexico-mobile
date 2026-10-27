@@ -50,6 +50,12 @@ flutter:
         - asset: assets/fonts/InstrumentSerif-Regular.ttf
         - asset: assets/fonts/InstrumentSerif-Italic.ttf
           style: italic
+    # Cyrillic fallback for InstrumentSerif, which only covers Latin.
+    - family: PlayfairDisplay
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay.ttf
+        - asset: assets/fonts/PlayfairDisplay-Italic.ttf
+          style: italic
     - family: Manrope
       fonts:
         - asset: assets/fonts/Manrope.ttf

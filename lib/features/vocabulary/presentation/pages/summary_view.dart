@@ -154,36 +154,106 @@ class _MissedList extends StatelessWidget {
     padding: EdgeInsets.zero,
     itemCount: words.length,
     separatorBuilder: (_, _) => const SizedBox(height: 8),
-    itemBuilder: (context, index) {
-      final word = words[index];
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.hairline),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                word.question,
-                style: AppTypography.display(20, color: AppColors.textPrimary),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                word.answer,
-                style: AppTypography.body(13.5, color: AppColors.textMuted),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      );
-    },
+    itemBuilder: (context, index) => _MissedTile(word: words[index]),
   );
+}
+
+/// A "back tomorrow" row. When the word or its answer is cut off, tapping
+/// expands it into a column showing the full text; tapping again collapses it.
+class _MissedTile extends StatefulWidget {
+  const _MissedTile({required this.word});
+
+  final VocabWord word;
+
+  @override
+  State<_MissedTile> createState() => _MissedTileState();
+}
+
+class _MissedTileState extends State<_MissedTile> {
+  static const _padding = EdgeInsets.symmetric(horizontal: 16, vertical: 14);
+  static const _gap = 12.0;
+
+  bool _expanded = false;
+
+  bool _overflows(String text, TextStyle style, double maxWidth) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: maxWidth);
+    final exceeded = painter.didExceedMaxLines;
+    painter.dispose();
+    return exceeded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final questionStyle = AppTypography.word(
+      16.5,
+      color: AppColors.textPrimary,
+    );
+    final answerStyle = AppTypography.body(13.5, color: AppColors.textMuted);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // In the collapsed row each text gets at most half the inner width.
+        final half = (constraints.maxWidth - _padding.horizontal - _gap) / 2;
+        final truncated =
+            _overflows(widget.word.question, questionStyle, half) ||
+            _overflows(widget.word.answer, answerStyle, half);
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: truncated || _expanded
+              ? () => setState(() => _expanded = !_expanded)
+              : null,
+          child: Container(
+            padding: _padding,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.hairline),
+            ),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: _expanded
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.word.question, style: questionStyle),
+                        const SizedBox(height: 6),
+                        Text(widget.word.answer, style: answerStyle),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.word.question,
+                            style: questionStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: _gap),
+                        Flexible(
+                          child: Text(
+                            widget.word.answer,
+                            style: answerStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
