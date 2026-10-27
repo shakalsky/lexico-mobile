@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +19,11 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-    create: (_) => sl<SettingsCubit>()..load(),
+    create: (_) {
+      final cubit = sl<SettingsCubit>();
+      unawaited(cubit.load());
+      return cubit;
+    },
     child: Scaffold(
       backgroundColor: AppColors.shell,
       appBar: AppBar(

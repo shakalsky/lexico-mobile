@@ -20,6 +20,15 @@ abstract interface class DecksRepository {
     required String language,
   });
 
+  /// Gives [deck] a new name and language on the device, at once; the
+  /// changes reach the word service with the next sync. Completes with the
+  /// edited deck.
+  Future<Result<Deck>> editDeck(
+    Deck deck, {
+    required String name,
+    required String language,
+  });
+
   /// Removes [deck], its words and their progress from the device, at once;
   /// the deletion reaches the word service with the next sync.
   Future<Result<void>> deleteDeck(Deck deck);

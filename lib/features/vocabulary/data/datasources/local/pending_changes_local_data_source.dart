@@ -28,6 +28,9 @@ abstract interface class PendingChangesLocalDataSource {
   /// Decks deleted on the device that the service hasn't heard of yet.
   Future<Set<String>> deletedDeckIds();
 
+  /// Decks edited on the device that the service hasn't heard of yet.
+  Future<Set<String>> editedDeckIds();
+
   /// Drops every change waiting for [deckId].
   Future<void> removeForDeck(String deckId);
 
@@ -121,10 +124,16 @@ class PendingChangesLocalDataSourceImpl
   });
 
   @override
-  Future<Set<String>> deletedDeckIds() => guardLocal(() async {
+  Future<Set<String>> deletedDeckIds() => _deckIdsOf(DeckDeleted.kindName);
+
+  @override
+  Future<Set<String>> editedDeckIds() => _deckIdsOf(DeckEdited.kindName);
+
+  /// Decks with a change of [kind] waiting.
+  Future<Set<String>> _deckIdsOf(String kind) => guardLocal(() async {
     final query = _db.selectOnly(_db.pendingChanges, distinct: true)
       ..addColumns([_db.pendingChanges.deckId])
-      ..where(_db.pendingChanges.kind.equals(DeckDeleted.kindName));
+      ..where(_db.pendingChanges.kind.equals(kind));
     final rows = await query.get();
     return {
       for (final row in rows)

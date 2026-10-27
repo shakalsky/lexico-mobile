@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lexico/core/error/failure.dart';
@@ -7,6 +8,7 @@ import 'package:lexico/core/theme/app_theme.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/delete_deck.dart';
+import 'package:lexico/features/decks/domain/usecases/edit_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
 import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
@@ -24,8 +26,8 @@ import '../../../helpers/fake_decks_repository.dart';
 import '../../../helpers/fake_vocabulary_repository.dart';
 import '../../../helpers/fixtures.dart';
 
-final _core = testDeckEntity('es-en-core', name: 'Core');
-final _food = testDeckEntity('es-food', name: 'Food', day: 9);
+final Deck _core = testDeckEntity('es-en-core', name: 'Core');
+final Deck _food = testDeckEntity('es-food', name: 'Food', day: 9);
 
 void main() {
   late FakeDecksRepository repository;
@@ -57,6 +59,7 @@ void main() {
           )..add(const DecksRequested()),
           child: DecksView(
             createDeck: CreateDeck(repository),
+            editDeck: EditDeck(repository),
             getDeckWords: GetDeckWords(vocabulary),
             refreshDeckWords: RefreshDeckWords(vocabulary),
             watchSyncConflicts: WatchSyncConflicts(vocabulary),
@@ -356,6 +359,208 @@ void main() {
       expect(find.text('Create deck'), findsNothing);
       expect(find.text('Core'), findsOneWidget);
       expect(repository.createCalls, isEmpty);
+    });
+  });
+
+  group('long press to edit', () {
+    /// What each haptic call asked for; `null` is Android's long-press one.
+    late List<Object?> haptics;
+
+    setUp(() {
+      haptics = [];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'HapticFeedback.vibrate') {
+              haptics.add(call.arguments);
+            }
+            return null;
+          });
+    });
+
+    tearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    double scaleOf(WidgetTester tester, String deckId) => tester
+        .widget<ScaleTransition>(
+          find.descendant(
+            of: find.byKey(Key('deck-$deckId')),
+            matching: find.byType(ScaleTransition),
+          ),
+        )
+        .scale
+        .value;
+
+    Future<void> openSheet(WidgetTester tester) async {
+      await tester.longPress(find.byKey(const Key('deck-es-food')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'the tile shrinks while held, then buzzes and opens the sheet',
+      (tester) async {
+        await pumpDecks(
+          tester,
+          decks: [
+            Result.success([_core, _food]),
+          ],
+        );
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byKey(const Key('deck-es-food'))),
+        );
+        await tester.pump(); // Starts the animation's clock.
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(scaleOf(tester, 'es-food'), lessThan(1));
+        expect(haptics, isEmpty);
+
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(haptics, hasLength(1));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Edit deck'), findsOneWidget);
+        expect(scaleOf(tester, 'es-food'), 1, reason: 'sprang back');
+        final field = tester.widget<TextField>(
+          find.descendant(
+            of: find.byKey(const Key('edit-deck-name')),
+            matching: find.byType(TextField),
+          ),
+        );
+        expect(field.controller!.text, 'Food');
+      },
+    );
+
+    testWidgets('letting go early neither buzzes nor opens the sheet', (
+      tester,
+    ) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_core, _food]),
+        ],
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('deck-es-food'))),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      await gesture.up();
+      await settle(tester);
+
+      expect(find.text('Edit deck'), findsNothing);
+      expect(haptics, isEmpty);
+    });
+
+    testWidgets('saves the new name and shows it in the list', (tester) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_core, _food]),
+        ],
+      );
+
+      await openSheet(tester);
+      await tester.enterText(
+        find.byKey(const Key('edit-deck-name')),
+        '  Food and drink ',
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit deck'), findsNothing, reason: 'sheet closed');
+      expect(find.text('Food and drink'), findsOneWidget);
+      expect(find.text('Saved “Food and drink”'), findsOneWidget);
+      expect(repository.editCalls, [
+        (id: 'es-food', name: 'Food and drink', language: 'Español'),
+      ]);
+    });
+
+    testWidgets('changes the language from the menu', (tester) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_food]),
+        ],
+      );
+
+      await openSheet(tester);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('edit-deck-language')),
+          matching: find.text('Español'),
+        ),
+        findsOneWidget,
+        reason: 'the deck language is offered though it is not built in',
+      );
+
+      await tester.tap(find.byKey(const Key('edit-deck-language')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Polski').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Español · added Oct 9, 2026'), findsNothing);
+      expect(find.text('Polski · added Oct 9, 2026'), findsOneWidget);
+      expect(repository.editCalls, [
+        (id: 'es-food', name: 'Food', language: 'Polski'),
+      ]);
+    });
+
+    testWidgets('keeping the name closes the sheet without saving', (
+      tester,
+    ) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_core, _food]),
+        ],
+      );
+
+      await openSheet(tester);
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit deck'), findsNothing);
+      expect(find.textContaining('Saved'), findsNothing);
+      expect(repository.editCalls, isEmpty);
+    });
+
+    testWidgets('asks for a name', (tester) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_food]),
+        ],
+      );
+
+      await openSheet(tester);
+      await tester.enterText(find.byKey(const Key('edit-deck-name')), '  ');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Give the deck a name.'), findsOneWidget);
+      expect(repository.editCalls, isEmpty);
+    });
+
+    testWidgets('keeps the sheet open and explains a failure', (tester) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_food]),
+        ],
+      );
+      repository.editFailure = const CacheFailure('Disk full.');
+
+      await openSheet(tester);
+      await tester.enterText(find.byKey(const Key('edit-deck-name')), 'Meals');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Disk full.'), findsOneWidget);
+      expect(find.text('Edit deck'), findsOneWidget);
     });
   });
 }

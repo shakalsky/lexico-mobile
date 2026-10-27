@@ -127,11 +127,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
                 ),
                 child: Text(
                   'Cancel',
-                  style: AppTypography.body(
-                    14,
-                    color: AppColors.textSecondary,
-                    weight: FontWeight.w600,
-                  ),
+                  style: AppTypography.body(14, weight: FontWeight.w600),
                 ),
               ),
               const SizedBox(width: 4),

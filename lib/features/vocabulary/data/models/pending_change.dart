@@ -21,6 +21,12 @@ sealed class PendingChange extends Equatable {
       name: payload['name'] as String,
       language: payload['language'] as String,
     ),
+    DeckEdited.kindName => DeckEdited(
+      deckId: deckId,
+      deckName: payload['deck_name'] as String,
+      name: payload['name'] as String?,
+      language: payload['language'] as String?,
+    ),
     DeckDeleted.kindName => DeckDeleted(
       deckId: deckId,
       name: payload['name'] as String,
@@ -79,6 +85,41 @@ final class DeckCreated extends PendingChange {
 
   @override
   List<Object?> get props => [deckId, name, language];
+}
+
+/// `PATCH /decks/{deckId}` with only the fields that changed, so an edit
+/// made elsewhere to the other field is kept.
+final class DeckEdited extends PendingChange {
+  const DeckEdited({
+    required super.deckId,
+    required this.deckName,
+    this.name,
+    this.language,
+  }) : assert(name != null || language != null, 'Nothing was edited.');
+
+  static const kindName = 'deck_edited';
+
+  /// The deck's name after the edit, to name it if the service refuses.
+  final String deckName;
+
+  /// The new name, or `null` if it was kept.
+  final String? name;
+
+  /// The new language label, or `null` if it was kept.
+  final String? language;
+
+  @override
+  String get kind => kindName;
+
+  @override
+  Map<String, dynamic> get payload => {
+    'deck_name': deckName,
+    'name': ?name,
+    'language': ?language,
+  };
+
+  @override
+  List<Object?> get props => [deckId, deckName, name, language];
 }
 
 /// `DELETE /decks/{deckId}`.

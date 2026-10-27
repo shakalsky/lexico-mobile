@@ -30,6 +30,7 @@ class DecksBloc extends Bloc<DecksEvent, DecksState> {
     on<DecksRequested>(_onRequested);
     on<DecksRefreshed>(_onRefreshed);
     on<DeckAdded>(_onDeckAdded);
+    on<DeckUpdated>(_onDeckUpdated);
     on<DeckStudyToggled>(_onStudyToggled);
     on<DeckDeleteConfirmed>(_onDeleteConfirmed);
   }
@@ -98,8 +99,21 @@ class DecksBloc extends Bloc<DecksEvent, DecksState> {
   /// The list is oldest first, so a new deck goes last. Without a list on
   /// screen yet, load the whole thing instead.
   Future<void> _onDeckAdded(DeckAdded event, Emitter<DecksState> emit) async {
-    if (state.status != DecksStatus.ready) return _load(emit);
+    if (state.status != DecksStatus.ready) return await _load(emit);
     emit(state.copyWith(decks: [...state.decks, event.deck]));
+  }
+
+  void _onDeckUpdated(DeckUpdated event, Emitter<DecksState> emit) {
+    final deck = event.deck;
+    if (!state.decks.any((d) => d.id == deck.id)) return;
+    emit(
+      state.copyWith(
+        decks: [
+          for (final d in state.decks)
+            if (d.id == deck.id) deck else d,
+        ],
+      ),
+    );
   }
 
   /// Flips the button at once, then saves; a failed save flips it back.

@@ -82,6 +82,13 @@ class OfflineHarness {
         language: any(named: 'language'),
       ),
     ).thenThrow(offline);
+    when(
+      () => decksRemote.editDeck(
+        any(),
+        name: any(named: 'name'),
+        language: any(named: 'language'),
+      ),
+    ).thenThrow(offline);
   }
 
   /// Every change is accepted; fetches still need stubbing per test.
@@ -95,6 +102,20 @@ class OfflineHarness {
     ).thenAnswer((_) async => testDto());
     when(() => wordsRemote.deleteWord(any())).thenAnswer((_) async {});
     when(() => decksRemote.deleteDeck(any())).thenAnswer((_) async {});
+    when(
+      () => decksRemote.editDeck(
+        any(),
+        name: any(named: 'name'),
+        language: any(named: 'language'),
+      ),
+    ).thenAnswer(
+      (invocation) async => DeckDto(
+        id: invocation.positionalArguments[0] as String,
+        name: invocation.namedArguments[#name] as String? ?? 'unchanged',
+        language: invocation.namedArguments[#language] as String? ?? 'Español',
+        createdAt: now,
+      ),
+    );
     when(
       () => wordsRemote.submitReview(any(), correct: any(named: 'correct')),
     ).thenAnswer((_) async => testDto());

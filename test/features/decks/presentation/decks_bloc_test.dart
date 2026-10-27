@@ -15,8 +15,8 @@ import 'package:lexico/features/vocabulary/domain/usecases/set_deck_studied.dart
 import '../../../helpers/fake_decks_repository.dart';
 import '../../../helpers/fake_vocabulary_repository.dart';
 
-final _core = testDeckEntity('es-en-core', name: 'Core');
-final _food = testDeckEntity('es-food', name: 'Food', day: 9);
+final Deck _core = testDeckEntity('es-en-core', name: 'Core');
+final Deck _food = testDeckEntity('es-food', name: 'Food', day: 9);
 
 void main() {
   late FakeVocabularyRepository vocabulary;
@@ -165,6 +165,28 @@ void main() {
         const DecksState(status: DecksStatus.loading),
         ready([_core, _food], studied: {'es-en-core'}),
       ],
+    );
+  });
+
+  group('renaming', () {
+    final renamed = testDeckEntity('es-food', name: 'Meals', day: 9);
+
+    blocTest<DecksBloc, DecksState>(
+      'a renamed deck keeps its place in the list',
+      build: () => bloc([]),
+      seed: () => ready([_food, _core], studied: {'es-food'}),
+      act: (bloc) => bloc.add(DeckUpdated(renamed)),
+      expect: () => [
+        ready([renamed, _core], studied: {'es-food'}),
+      ],
+    );
+
+    blocTest<DecksBloc, DecksState>(
+      'a deck no longer listed is ignored',
+      build: () => bloc([]),
+      seed: () => ready([_core]),
+      act: (bloc) => bloc.add(DeckUpdated(renamed)),
+      expect: () => <DecksState>[],
     );
   });
 

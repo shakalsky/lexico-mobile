@@ -123,18 +123,25 @@ class SyncEngine {
 
   /// Sends waiting changes, then stores the service's deck list. Decks the
   /// service no longer has are removed from the device, unless they have
-  /// changes waiting. Decks deleted here but not yet on the service stay
-  /// deleted.
+  /// changes waiting. Decks deleted or edited here but not yet on the
+  /// service stay as they are.
   ///
   /// Throws an [AppException] when the list can't be fetched or stored.
   Future<void> refreshDecks() => _serialized(() async {
     await _drain();
+    await _pullDecks();
+  });
+
+  Future<void> _pullDecks() async {
     final decks = await _decksRemote.fetchDecks();
     await _transaction(() async {
-      final deleted = await _pending.deletedDeckIds();
+      final keepLocal = {
+        ...await _pending.deletedDeckIds(),
+        ...await _pending.editedDeckIds(),
+      };
       await _decksLocal.saveDecks([
         for (final deck in decks)
-          if (!deleted.contains(deck.id)) deck.toRow(),
+          if (!keepLocal.contains(deck.id)) deck.toRow(),
       ]);
       final keep = {
         for (final deck in decks) deck.id,
@@ -144,7 +151,7 @@ class SyncEngine {
         if (!keep.contains(id)) await _local.deleteDeck(id);
       }
     });
-  });
+  }
 
   /// Sends waiting changes, then stores the service's copy of [deckId]. A
   /// deck with changes still waiting is left as it is.
@@ -224,12 +231,23 @@ class SyncEngine {
   /// Pulls the decks of [refused] changes so the device matches the service
   /// again, then tells the learner what was lost. A deck whose deletion was
   /// refused isn't pulled: it is no longer stored, and comes back with the
-  /// next deck list.
+  /// next deck list. A refused deck edit pulls the deck list, to bring the
+  /// old name and language back.
   Future<void> _settle(List<_Refusal> refused) async {
     try {
+      if (refused.any((r) => r.change is DeckEdited)) {
+        try {
+          await _pullDecks();
+        } on CacheException {
+          rethrow;
+        } on AppException catch (error) {
+          debugPrint('Léxico: could not re-sync decks — ${error.message}');
+        }
+      }
       final deckIds = {
         for (final r in refused)
-          if (r.change is! DeckDeleted) r.change.deckId,
+          if (r.change is! DeckDeleted && r.change is! DeckEdited)
+            r.change.deckId,
       };
       for (final deckId in deckIds) {
         try {
@@ -260,6 +278,7 @@ class SyncEngine {
     };
     final (change, subject) = switch (refusal.change) {
       DeckCreated(:final name) => (SyncedChange.deckCreated, name),
+      DeckEdited(:final deckName) => (SyncedChange.deckEdited, deckName),
       DeckDeleted(:final name) => (SyncedChange.deckDeleted, name),
       WordAdded(:final draft) => (SyncedChange.wordAdded, draft.subject),
       WordEdited(:final draft) => (SyncedChange.wordEdited, draft.subject),
@@ -317,6 +336,8 @@ class SyncEngine {
             name: name,
             language: language,
           );
+        case DeckEdited(:final deckId, :final name, :final language):
+          await _decksRemote.editDeck(deckId, name: name, language: language);
         case DeckDeleted(:final deckId):
           await _decksRemote.deleteDeck(deckId);
         case WordAdded(:final deckId, :final wordId, :final draft):

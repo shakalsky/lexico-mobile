@@ -47,11 +47,7 @@ class _AppShellState extends State<AppShell> {
     backgroundColor: AppColors.shell,
     body: IndexedStack(
       index: _index,
-      children: const [
-        HomePage(),
-        DecksPage(),
-        ProfilePage(),
-      ],
+      children: const [HomePage(), DecksPage(), ProfilePage()],
     ),
     bottomNavigationBar: DecoratedBox(
       decoration: const BoxDecoration(

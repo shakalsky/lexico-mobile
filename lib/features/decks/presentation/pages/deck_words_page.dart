@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lexico/core/theme/app_colors.dart';
@@ -41,13 +43,17 @@ class DeckWordsPage extends StatelessWidget {
     required DeleteWord deleteWord,
   }) => MaterialPageRoute(
     builder: (_) => BlocProvider(
-      create: (_) => DeckWordsCubit(
-        deckId: deck.id,
-        getDeckWords: getDeckWords,
-        refreshDeckWords: refreshDeckWords,
-        watchSyncConflicts: watchSyncConflicts,
-        deleteWord: deleteWord,
-      )..load(),
+      create: (_) {
+        final cubit = DeckWordsCubit(
+          deckId: deck.id,
+          getDeckWords: getDeckWords,
+          refreshDeckWords: refreshDeckWords,
+          watchSyncConflicts: watchSyncConflicts,
+          deleteWord: deleteWord,
+        );
+        unawaited(cubit.load());
+        return cubit;
+      },
       child: DeckWordsPage(deck: deck, addWord: addWord, editWord: editWord),
     ),
   );

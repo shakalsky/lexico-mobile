@@ -35,19 +35,22 @@ AppException mapDioException(DioException error) => switch (error.type) {
   DioExceptionType.receiveTimeout ||
   DioExceptionType.transformTimeout => const NetworkException(
     'The word service took too long to answer.',
-    true,
+    mayHaveArrived: true,
   ),
   DioExceptionType.connectionError => NetworkException(
     error.message ?? 'Could not reach the word service.',
   ),
   DioExceptionType.unknown => NetworkException(
     error.message ?? 'Could not reach the word service.',
-    true,
+    mayHaveArrived: true,
   ),
   DioExceptionType.badCertificate => const NetworkException(
     'The word service presented an invalid certificate.',
   ),
-  DioExceptionType.cancel => const NetworkException('Request cancelled.', true),
+  DioExceptionType.cancel => const NetworkException(
+    'Request cancelled.',
+    mayHaveArrived: true,
+  ),
   DioExceptionType.badResponse => _serverException(error.response),
 };
 

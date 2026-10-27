@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/core/theme/app_theme.dart';
+import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/presentation/pages/deck_words_page.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
@@ -16,7 +17,7 @@ import '../../../helpers/fake_decks_repository.dart';
 import '../../../helpers/fake_vocabulary_repository.dart';
 import '../../../helpers/fixtures.dart';
 
-final _food = testDeckEntity('es-food', name: 'Food');
+final Deck _food = testDeckEntity('es-food', name: 'Food');
 
 const _sentence = VocabWord(
   id: 'es-sal',
@@ -69,7 +70,7 @@ void main() {
   }
 
   testWidgets('lists the words with how each one is going', (tester) async {
-    final pan = VocabWord(
+    const pan = VocabWord(
       id: 'es-pan',
       deckId: 'es-food',
       questionShort: 'el pan',
@@ -81,7 +82,7 @@ void main() {
       failuresCount: 1,
     );
     await openPage(tester, [
-      Result.success([pan, _sentence]),
+      const Result.success([pan, _sentence]),
     ]);
 
     expect(find.text('Food'), findsOneWidget);
@@ -108,7 +109,6 @@ void main() {
       questionExample: 'Falta sal.',
       answerExample: 'It needs salt.',
       showsCount: 2,
-      successesCount: 0,
       failuresCount: 2,
     );
     await openPage(tester, [
@@ -328,7 +328,7 @@ void main() {
   });
 
   group('editing', () {
-    final pan = VocabWord(
+    const pan = VocabWord(
       id: 'es-pan',
       deckId: 'es-food',
       questionShort: 'el pan',
@@ -342,7 +342,7 @@ void main() {
 
     Future<void> openEditor(WidgetTester tester) async {
       await openPage(tester, [
-        Result.success([pan, _sentence]),
+        const Result.success([pan, _sentence]),
       ]);
       await tester.tap(find.byKey(const Key('word-es-pan')));
       await tester.pumpAndSettle();

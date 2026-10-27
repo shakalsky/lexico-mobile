@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lexico/core/theme/app_colors.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/entities/deck_language.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
 import 'package:lexico/features/decks/presentation/cubit/new_deck_cubit.dart';
+import 'package:lexico/features/decks/presentation/widgets/deck_language_field.dart';
 import 'package:lexico/features/decks/presentation/widgets/form_sheet.dart';
 
 /// Bottom sheet that creates a deck on the word service.
@@ -69,30 +69,14 @@ class _NewDeckSheetState extends State<NewDeckSheet> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
               ),
-              FormLabeled(
-                label: 'Language',
-                child: DropdownButtonFormField<DeckLanguage>(
-                  key: const Key('new-deck-language'),
-                  initialValue: _language,
-                  onChanged: saving
-                      ? null
-                      : (language) {
-                          if (language != null) {
-                            setState(() => _language = language);
-                          }
-                        },
-                  items: [
-                    for (final language in DeckLanguage.values)
-                      DropdownMenuItem(
-                        value: language,
-                        child: Text(language.label),
-                      ),
-                  ],
-                  style: formFieldTextStyle,
-                  dropdownColor: AppColors.surfaceRaised,
-                  borderRadius: BorderRadius.circular(14),
-                  iconEnabledColor: AppColors.textMuted,
-                  decoration: formFieldDecoration(),
+              DeckLanguageField(
+                key: const Key('new-deck-language'),
+                value: _language.label,
+                enabled: !saving,
+                onChanged: (label) => setState(
+                  () => _language = DeckLanguage.values.firstWhere(
+                    (language) => language.label == label,
+                  ),
                 ),
               ),
             ],

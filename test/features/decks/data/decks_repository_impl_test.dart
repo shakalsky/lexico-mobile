@@ -100,6 +100,100 @@ void main() {
     expect((await repository.getDecks()).valueOrNull, hasLength(1));
   });
 
+  group('editDeck', () {
+    /// A synced deck named `d1`, in `Español`.
+    Future<Deck> storeDeck() async {
+      when(h.decksRemote.fetchDecks).thenAnswer((_) async => [dto('d1', 8)]);
+      await repository.refreshDecks();
+      reset(h.decksRemote);
+      return (await repository.getDecks()).valueOrNull!.single;
+    }
+
+    test('edits the deck on the device at once, even offline', () async {
+      final deck = await storeDeck();
+      h.goOffline();
+
+      final edited = (await repository.editDeck(
+        deck,
+        name: 'Food',
+        language: 'Polski',
+      )).valueOrNull!;
+
+      expect(edited.id, 'd1');
+      expect(edited.name, 'Food');
+      expect(edited.language, 'Polski');
+      expect(edited.createdAt, deck.createdAt);
+      expect((await repository.getDecks()).valueOrNull, [edited]);
+      expect(
+        (await h.pending.oldest())!.change,
+        const DeckEdited(
+          deckId: 'd1',
+          deckName: 'Food',
+          name: 'Food',
+          language: 'Polski',
+        ),
+      );
+    });
+
+    test('queues only the field that changed', () async {
+      final deck = await storeDeck();
+
+      await repository.editDeck(deck, name: deck.name, language: 'Polski');
+
+      expect(
+        (await h.pending.oldest())!.change,
+        const DeckEdited(deckId: 'd1', deckName: 'd1', language: 'Polski'),
+      );
+      expect((await repository.getDecks()).valueOrNull!.single.name, 'd1');
+    });
+
+    test('sends the changes to the service', () async {
+      final deck = await storeDeck();
+      h.acceptChanges();
+
+      await repository.editDeck(deck, name: 'Food', language: deck.language);
+      await h.sync.push();
+
+      verify(() => h.decksRemote.editDeck('d1', name: 'Food')).called(1);
+      expect(await h.pending.count(), 0);
+    });
+
+    test('changing nothing queues nothing', () async {
+      final deck = await storeDeck();
+
+      final result = await repository.editDeck(
+        deck,
+        name: deck.name,
+        language: deck.language,
+      );
+
+      expect(result.valueOrNull, deck);
+      expect(await h.pending.count(), 0);
+    });
+
+    test(
+      'keeps the edit when a refresh runs before the service hears of it',
+      () async {
+        final deck = await storeDeck();
+        when(
+          () => h.decksRemote.editDeck(
+            any(),
+            name: any(named: 'name'),
+            language: any(named: 'language'),
+          ),
+        ).thenThrow(const ServerException('Down.', statusCode: 503));
+        when(h.decksRemote.fetchDecks).thenAnswer((_) async => [dto('d1', 8)]);
+
+        await repository.editDeck(deck, name: 'Food', language: 'Polski');
+        final decks = (await repository.refreshDecks()).valueOrNull!;
+
+        expect(decks.single.name, 'Food');
+        expect(decks.single.language, 'Polski');
+        expect(await h.pending.count(), 1);
+      },
+    );
+  });
+
   group('deleteDeck', () {
     /// A synced, studied deck with two words, and a change waiting for it.
     Future<Deck> storeDeck() async {

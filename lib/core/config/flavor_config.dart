@@ -2,24 +2,23 @@ enum Flavor { dev, staging }
 
 /// What differs between builds of the app. Picked by the entrypoint
 /// (`lib/main_<flavor>.dart`) and registered once at startup.
-class FlavorConfig {
+enum FlavorConfig {
+  dev._(
+    flavor: Flavor.dev,
+    appTitle: 'Léxico Dev',
+    apiBaseUrl: 'http://192.168.0.159:3000',
+  ),
+  staging._(
+    flavor: Flavor.staging,
+    appTitle: 'Léxico Staging',
+    apiBaseUrl: 'http://192.168.0.159:3001',
+  );
+
   const FlavorConfig._({
     required this.flavor,
     required this.appTitle,
     required String apiBaseUrl,
   }) : _apiBaseUrl = apiBaseUrl;
-
-  static const FlavorConfig dev = FlavorConfig._(
-    flavor: Flavor.dev,
-    appTitle: 'Léxico Dev',
-    apiBaseUrl: 'http://192.168.0.159:3000',
-  );
-
-  static const FlavorConfig staging = FlavorConfig._(
-    flavor: Flavor.staging,
-    appTitle: 'Léxico Staging',
-    apiBaseUrl: 'http://192.168.0.159:3001',
-  );
 
   final Flavor flavor;
   final String appTitle;

@@ -78,7 +78,8 @@ void main() {
     expect(find.text('léxico'), findsOneWidget);
     expect(find.text('0 day streak'), findsOneWidget);
     expect(find.text('Start session'), findsOneWidget);
-    expect(find.textContaining('3 words'), findsOneWidget);  });
+    expect(find.textContaining('3 words'), findsOneWidget);
+  });
 
   testWidgets('a card turns over to reveal the answer', (tester) async {
     await pumpApp(tester);

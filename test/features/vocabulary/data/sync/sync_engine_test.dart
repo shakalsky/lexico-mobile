@@ -180,7 +180,7 @@ void main() {
     test('never repeats an answer that may have been counted', () async {
       when(
         () => h.wordsRemote.submitReview(any(), correct: any(named: 'correct')),
-      ).thenThrow(const NetworkException('timed out', true));
+      ).thenThrow(const NetworkException('timed out', mayHaveArrived: true));
       await queue(
         const WordReviewed(deckId: 'd1', wordId: 'w1', correct: true),
       );
@@ -316,6 +316,70 @@ void main() {
       await h.sync.push();
       await pumpEventQueue();
 
+      expect(conflicts.single.reason, SyncConflictReason.deckGone);
+    });
+
+    void refuseDeckEdits(ServerException error) => when(
+      () => h.decksRemote.editDeck(
+        any(),
+        name: any(named: 'name'),
+        language: any(named: 'language'),
+      ),
+    ).thenThrow(error);
+
+    test('a deck edit the service refuses is undone and reported', () async {
+      await storeDeck('d1', ['w1']);
+      await h.decksLocal.editDeck('d1', name: 'Mine', language: 'Polski');
+      await queue(
+        const DeckEdited(
+          deckId: 'd1',
+          deckName: 'Mine',
+          name: 'Mine',
+          language: 'Polski',
+        ),
+      );
+      refuseDeckEdits(refused('FST_ERR_VALIDATION', 400));
+      when(h.decksRemote.fetchDecks).thenAnswer(
+        (_) async => [
+          DeckDto(
+            id: 'd1',
+            name: 'Theirs',
+            language: 'Español',
+            createdAt: h.now,
+          ),
+        ],
+      );
+
+      await h.sync.push();
+      await pumpEventQueue();
+
+      final deck = (await h.decksLocal.decks()).single;
+      expect(deck.name, 'Theirs');
+      expect(deck.language, 'Español');
+      expect(await h.local.wordsOfDeck('d1'), hasLength(1));
+      expect(conflicts, [
+        const SyncConflict(
+          change: SyncedChange.deckEdited,
+          reason: SyncConflictReason.refused,
+          deckId: 'd1',
+          subject: 'Mine',
+          serverMessage: 'refused',
+        ),
+      ]);
+    });
+
+    test('editing a deck deleted on the service removes it', () async {
+      await storeDeck('d1', ['w1']);
+      await queue(
+        const DeckEdited(deckId: 'd1', deckName: 'd1', language: 'Polski'),
+      );
+      refuseDeckEdits(refused('deck_not_found', 404));
+      when(h.decksRemote.fetchDecks).thenAnswer((_) async => []);
+
+      await h.sync.push();
+      await pumpEventQueue();
+
+      expect(await h.decksLocal.deckIds(), isEmpty);
       expect(conflicts.single.reason, SyncConflictReason.deckGone);
     });
 

@@ -154,7 +154,7 @@ class VocabularyRepositoryImpl implements VocabularyRepository {
     } on AppException catch (error) {
       return Result.failure(error.toFailure());
     }
-    return deckWords(deckId);
+    return await deckWords(deckId);
   }
 
   @override

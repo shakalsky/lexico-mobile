@@ -13,13 +13,13 @@ class SetWordsPerSession implements UseCase<void, int> {
   @override
   Future<Result<void>> call(int count) async {
     if (!StudyPreferences.isValidWordsPerSession(count)) {
-      return Result.failure(
+      return const Result.failure(
         ValidationFailure(
           'Pick between ${StudyPreferences.minWordsPerSession} and '
           '${StudyPreferences.maxWordsPerSession} words.',
         ),
       );
     }
-    return _repository.setWordsPerSession(count);
+    return await _repository.setWordsPerSession(count);
   }
 }

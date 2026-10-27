@@ -27,9 +27,9 @@ void main() {
       12: CardLevel.c2,
       40: CardLevel.c2,
     };
-    expected.forEach((lapses, level) {
+    for (final MapEntry(key: lapses, value: level) in expected.entries) {
       expect(levelAfter(lapses), level, reason: '$lapses lapses');
-    });
+    }
   });
 
   test('harder badges pay more XP', () {

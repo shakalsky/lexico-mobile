@@ -22,8 +22,8 @@ void main() {
   setUp(() => vocabulary = FakeVocabularyRepository());
 
   DeckWordsCubit cubit({
-    List<VocabWord> storedWords = const [],
     required Result<List<VocabWord>> refreshed,
+    List<VocabWord> storedWords = const [],
   }) {
     vocabulary.storedDeckWords[testDeckId] = storedWords;
     vocabulary.deckWordResults[testDeckId] = [refreshed];

@@ -198,7 +198,7 @@ class _NoticeLayerState extends State<_NoticeLayer> {
             switchOutCurve: Curves.easeIn,
             layoutBuilder: (current, previous) => Stack(
               alignment: Alignment.topCenter,
-              children: [...previous, if (current != null) current],
+              children: [...previous, ?current],
             ),
             transitionBuilder: (child, animation) => FadeTransition(
               opacity: animation,

@@ -12,7 +12,7 @@ abstract interface class VocabularyRemoteDataSource {
 
   /// `POST /decks/{deckId}/words` with `{ "words": [ … ] }` →
   /// `201 { "words": [ … ] }`: the created words, in request order. All or
-  /// nothing — if one is refused, none are added. Each word keeps the [id]
+  /// nothing — if one is refused, none are added. Each word keeps the `id`
   /// it was given, so sending the same words again is refused rather than
   /// adding them twice.
   Future<List<WordDto>> addWords(

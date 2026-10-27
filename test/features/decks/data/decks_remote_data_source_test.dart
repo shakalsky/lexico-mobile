@@ -106,6 +106,57 @@ void main() {
     expect(deck.name, 'Food');
   });
 
+  test('edits a deck and returns what the service stored', () async {
+    adapter.reply = () => jsonReply(200, {
+      'deck': {
+        'id': 'es-food',
+        'name': 'Food and drink',
+        'language': 'Polski',
+        'created_at': '2026-10-22T08:00:00.000Z',
+      },
+    });
+
+    final deck = await remote.editDeck(
+      'es-food',
+      name: 'Food and drink',
+      language: 'Polski',
+    );
+
+    final request = adapter.lastRequest!;
+    expect(request.method, 'PATCH');
+    expect(request.path, '/decks/es-food');
+    expect(request.data, {'name': 'Food and drink', 'language': 'Polski'});
+    expect(deck.name, 'Food and drink');
+    expect(deck.language, 'Polski');
+  });
+
+  test('sends only the fields that changed', () async {
+    adapter.reply = () => jsonReply(200, {
+      'deck': {
+        'id': 'es-food',
+        'name': 'Food',
+        'language': 'Polski',
+        'created_at': '2026-10-22T08:00:00.000Z',
+      },
+    });
+
+    await remote.editDeck('es-food', language: 'Polski');
+
+    expect(adapter.lastRequest!.data, {'language': 'Polski'});
+  });
+
+  test('reports editing a missing deck with its code', () async {
+    adapter.reply = () =>
+        jsonReply(404, {'error': 'deck_not_found', 'message': 'No such deck.'});
+
+    await expectLater(
+      remote.editDeck('gone', name: 'X'),
+      throwsA(
+        isA<ServerException>().having((e) => e.code, 'code', 'deck_not_found'),
+      ),
+    );
+  });
+
   test('surfaces a rejected deck with its message', () async {
     adapter.reply = () => jsonReply(400, {
       'statusCode': 400,

@@ -22,6 +22,16 @@ final class DeckAdded extends DecksEvent {
   List<Object?> get props => [deck];
 }
 
+/// A deck was just edited; show its new name and language in its place.
+final class DeckUpdated extends DecksEvent {
+  const DeckUpdated(this.deck);
+
+  final Deck deck;
+
+  @override
+  List<Object?> get props => [deck];
+}
+
 /// The Study / Studying button of a deck was tapped.
 final class DeckStudyToggled extends DecksEvent {
   const DeckStudyToggled(this.deckId);

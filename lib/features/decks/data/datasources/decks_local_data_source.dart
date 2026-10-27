@@ -14,6 +14,9 @@ abstract interface class DecksLocalDataSource {
 
   /// Stores [decks], overwriting the stored copies.
   Future<void> saveDecks(List<DeckRow> decks);
+
+  /// Changes the fields given of [deckId]. Does nothing if it is not stored.
+  Future<void> editDeck(String deckId, {String? name, String? language});
 }
 
 class DecksLocalDataSourceImpl implements DecksLocalDataSource {
@@ -52,4 +55,15 @@ class DecksLocalDataSourceImpl implements DecksLocalDataSource {
     () =>
         _db.batch((batch) => batch.insertAllOnConflictUpdate(_db.decks, decks)),
   );
+
+  @override
+  Future<void> editDeck(String deckId, {String? name, String? language}) =>
+      guardLocal(
+        () => (_db.update(_db.decks)..where((t) => t.id.equals(deckId))).write(
+          DecksCompanion(
+            name: Value.absentIfNull(name),
+            language: Value.absentIfNull(language),
+          ),
+        ),
+      );
 }

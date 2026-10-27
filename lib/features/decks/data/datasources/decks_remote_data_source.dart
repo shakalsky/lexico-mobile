@@ -16,6 +16,11 @@ abstract interface class DecksRemoteDataSource {
     required String language,
   });
 
+  /// `PATCH /decks/{deckId}` with `{ "name"?, "language"? }` →
+  /// `{ "deck": … }`. Only the fields given are sent; at least one is
+  /// needed. A deck that isn't there is refused with `deck_not_found`.
+  Future<DeckDto> editDeck(String deckId, {String? name, String? language});
+
   /// `DELETE /decks/{deckId}` → `204`, no body. Deletes the deck and all of
   /// its words. A deck that isn't there is refused with `deck_not_found`.
   Future<void> deleteDeck(String deckId);
@@ -63,6 +68,26 @@ class DecksRemoteDataSourceImpl implements DecksRemoteDataSource {
       throw ServerException('The new deck had an unreadable date: $error');
     }
   });
+
+  @override
+  Future<DeckDto> editDeck(String deckId, {String? name, String? language}) =>
+      guardRequest(() async {
+        final response = await _dio.patch<Map<String, dynamic>>(
+          '/decks/${Uri.encodeComponent(deckId)}',
+          data: {'name': ?name, 'language': ?language},
+        );
+        final deck = response.data?['deck'];
+        if (deck is! Map<String, dynamic>) {
+          throw const ServerException('Edit response had no "deck".');
+        }
+        try {
+          return DeckDto.fromJson(deck);
+        } on FormatException catch (error) {
+          throw ServerException(
+            'The edited deck had an unreadable date: $error',
+          );
+        }
+      });
 
   @override
   Future<void> deleteDeck(String deckId) => guardRequest(

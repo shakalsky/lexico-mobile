@@ -80,7 +80,7 @@ class DeckWordsCubit extends Cubit<DeckWordsState> {
   @override
   Future<void> close() async {
     await _conflicts.cancel();
-    return super.close();
+    return await super.close();
   }
 
   /// Shows the stored words at once, then refreshes them. A spinner shows
@@ -117,7 +117,7 @@ class DeckWordsCubit extends Cubit<DeckWordsState> {
   /// Pull to refresh: keeps the list on screen, and on a failure keeps it
   /// and only reports the problem.
   Future<void> refresh() async {
-    if (state.status != DeckWordsStatus.ready) return load();
+    if (state.status != DeckWordsStatus.ready) return await load();
 
     final result = await _refreshDeckWords(deckId);
     emit(
@@ -139,7 +139,7 @@ class DeckWordsCubit extends Cubit<DeckWordsState> {
   /// A word was just added; new words go last.
   /// Without a list on screen yet, it loads the whole deck instead.
   Future<void> wordAdded(VocabWord word) async {
-    if (state.status != DeckWordsStatus.ready) return load();
+    if (state.status != DeckWordsStatus.ready) return await load();
     emit(
       DeckWordsState(
         status: DeckWordsStatus.ready,
@@ -156,7 +156,7 @@ class DeckWordsCubit extends Cubit<DeckWordsState> {
         status: DeckWordsStatus.ready,
         words: [
           for (final existing in state.words)
-            existing.id == word.id ? word : existing,
+            if (existing.id == word.id) word else existing,
         ],
       ),
     );

@@ -257,7 +257,7 @@ class VocabularyLocalDataSourceImpl implements VocabularyLocalDataSource {
   Future<int> _countReviews(Expression<bool> where) async {
     final count = _db.reviews.wordId.count();
     final row = await _studiedReviews([count], where).getSingle();
-    return row.read(count) ?? 0;
+    return row.read<int>(count) ?? 0;
   }
 
   @override
@@ -361,7 +361,7 @@ class VocabularyLocalDataSourceImpl implements VocabularyLocalDataSource {
     final row = await (_db.selectOnly(
       _db.studySessions,
     )..addColumns([xp])).getSingle();
-    return row.read(xp) ?? 0;
+    return row.read<int>(xp) ?? 0;
   });
 
   @override

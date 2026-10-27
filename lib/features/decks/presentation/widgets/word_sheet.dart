@@ -209,10 +209,7 @@ class _ShortFieldsToggle extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         summary,
-                        style: AppTypography.body(
-                          14,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: AppTypography.body(14),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

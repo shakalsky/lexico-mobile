@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:lexico/app/injection.dart';
@@ -10,8 +12,10 @@ import 'package:lexico/core/widgets/app_notice.dart';
 import 'package:lexico/core/widgets/swipe_to_delete.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
+import 'package:lexico/features/decks/domain/usecases/edit_deck.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
 import 'package:lexico/features/decks/presentation/pages/deck_words_page.dart';
+import 'package:lexico/features/decks/presentation/widgets/edit_deck_sheet.dart';
 import 'package:lexico/features/decks/presentation/widgets/new_deck_sheet.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
@@ -30,6 +34,7 @@ class DecksPage extends StatelessWidget {
     create: (_) => sl<DecksBloc>()..add(const DecksRequested()),
     child: DecksView(
       createDeck: sl<CreateDeck>(),
+      editDeck: sl<EditDeck>(),
       getDeckWords: sl<GetDeckWords>(),
       refreshDeckWords: sl<RefreshDeckWords>(),
       watchSyncConflicts: sl<WatchSyncConflicts>(),
@@ -43,6 +48,7 @@ class DecksPage extends StatelessWidget {
 class DecksView extends StatelessWidget {
   const DecksView({
     required this.createDeck,
+    required this.editDeck,
     required this.getDeckWords,
     required this.refreshDeckWords,
     required this.watchSyncConflicts,
@@ -54,6 +60,9 @@ class DecksView extends StatelessWidget {
 
   /// Used by the "New deck" sheet.
   final CreateDeck createDeck;
+
+  /// Used by the sheet a long press on a deck opens.
+  final EditDeck editDeck;
 
   /// Used by the page a deck tile opens.
   final GetDeckWords getDeckWords;
@@ -72,6 +81,21 @@ class DecksView extends StatelessWidget {
 
     bloc.add(DeckAdded(deck));
     notices.show('Created “${deck.name}”');
+  }
+
+  Future<void> _editDeck(BuildContext context, Deck deck) async {
+    final bloc = context.read<DecksBloc>();
+    final notices = AppNotices.of(context);
+
+    final edited = await EditDeckSheet.show(
+      context,
+      deck: deck,
+      editDeck: editDeck,
+    );
+    if (edited == null) return;
+
+    bloc.add(DeckUpdated(edited));
+    notices.show('Saved “${edited.name}”');
   }
 
   /// Called once the learner confirmed; a failure is reported by the bloc.
@@ -118,6 +142,7 @@ class DecksView extends StatelessWidget {
                 DecksStatus.ready => _DeckList(
                   state: state,
                   onDeckDeleted: (deck) => _deleteDeck(context, deck),
+                  onDeckLongPressed: (deck) => _editDeck(context, deck),
                   onDeckTapped: (deck) => Navigator.of(context).push(
                     DeckWordsPage.route(
                       deck,
@@ -209,11 +234,15 @@ class _DeckList extends StatelessWidget {
   const _DeckList({
     required this.state,
     required this.onDeckTapped,
+    required this.onDeckLongPressed,
     required this.onDeckDeleted,
   });
 
   final DecksState state;
   final ValueChanged<Deck> onDeckTapped;
+
+  /// Opens the edit sheet.
+  final ValueChanged<Deck> onDeckLongPressed;
 
   /// The learner swiped a deck away and confirmed.
   final ValueChanged<Deck> onDeckDeleted;
@@ -263,6 +292,7 @@ class _DeckList extends StatelessWidget {
                   deck: deck,
                   isStudied: state.isStudied(deck),
                   onTap: () => onDeckTapped(deck),
+                  onLongPress: () => onDeckLongPressed(deck),
                   onStudyToggled: () =>
                       context.read<DecksBloc>().add(DeckStudyToggled(deck.id)),
                 ),
@@ -272,11 +302,12 @@ class _DeckList extends StatelessWidget {
   );
 }
 
-class _DeckTile extends StatelessWidget {
+class _DeckTile extends StatefulWidget {
   const _DeckTile({
     required this.deck,
     required this.isStudied,
     required this.onTap,
+    required this.onLongPress,
     required this.onStudyToggled,
   });
 
@@ -285,58 +316,110 @@ class _DeckTile extends StatelessWidget {
 
   /// Opens the deck. The Study button handles its own taps.
   final VoidCallback onTap;
+
+  /// Called with a haptic tap once the press has been held long enough.
+  final VoidCallback onLongPress;
   final VoidCallback onStudyToggled;
 
   @override
+  State<_DeckTile> createState() => _DeckTileState();
+}
+
+/// While a finger rests on the tile it shrinks, reaching its smallest just
+/// as the press counts as long. Letting go early, scrolling or swiping
+/// springs it back.
+class _DeckTileState extends State<_DeckTile>
+    with SingleTickerProviderStateMixin {
+  static const _pressedScale = 0.95;
+
+  late final _press = AnimationController(
+    vsync: this,
+    duration: kLongPressTimeout,
+    reverseDuration: const Duration(milliseconds: 180),
+  );
+  late final Animation<double> _scale = Tween<double>(
+    begin: 1,
+    end: _pressedScale,
+  ).animate(CurvedAnimation(parent: _press, curve: Curves.easeOut));
+
+  @override
+  void dispose() {
+    _press.dispose();
+    super.dispose();
+  }
+
+  void _release() => _press.reverse();
+
+  void _longPressed() {
+    _release();
+    unawaited(switch (Theme.of(context).platform) {
+      // Android's own long-press haptic.
+      TargetPlatform.android => HapticFeedback.vibrate(),
+      _ => HapticFeedback.mediumImpact(),
+    });
+    widget.onLongPress();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final deck = widget.deck;
+    final isStudied = widget.isStudied;
     final added = DateFormat.yMMMd().format(deck.createdAt.toLocal());
 
     return GestureDetector(
       key: Key('deck-${deck.id}'),
-      onTap: onTap,
+      onTap: widget.onTap,
+      onLongPressDown: (_) => _press.forward(),
+      onLongPressCancel: _release,
+      onLongPress: _longPressed,
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isStudied ? const Color(0x550CA678) : AppColors.hairline,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    deck.name,
-                    style: AppTypography.display(22),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${deck.language} · added $added',
-                    style: AppTypography.body(13, color: AppColors.textMuted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            _StudyButton(
-              key: Key('study-${deck.id}'),
-              isStudied: isStudied,
-              onPressed: onStudyToggled,
-            ),
-          ],
-        ),
+      child: ScaleTransition(
+        scale: _scale,
+        child: _tile(deck, isStudied, added),
       ),
     );
   }
+
+  Widget _tile(Deck deck, bool isStudied, String added) => Container(
+    padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: isStudied ? const Color(0x550CA678) : AppColors.hairline,
+      ),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                deck.name,
+                style: AppTypography.display(22),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${deck.language} · added $added',
+                style: AppTypography.body(13, color: AppColors.textMuted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        _StudyButton(
+          key: Key('study-${deck.id}'),
+          isStudied: isStudied,
+          onPressed: widget.onStudyToggled,
+        ),
+      ],
+    ),
+  );
 }
 
 /// "Study" adds the deck to the rotation; "Studying" takes it out again.

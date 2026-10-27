@@ -35,7 +35,7 @@ class StartStudySession
     if (due case Err() || Success(value: [_, ...])) return due;
 
     final upcoming = await _repository.upcomingCards(limit: params.limit);
-    return upcoming.fold(Result.failure, (cards) {
+    return upcoming.fold<Result<List<StudyCard>>>(Result.failure, (cards) {
       if (cards.isEmpty) return const Result.failure(EmptyDeckFailure());
       return Result.success(cards);
     });

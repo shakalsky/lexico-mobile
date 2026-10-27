@@ -5,11 +5,11 @@ import 'package:lexico/core/result/result.dart';
 import 'package:lexico/core/utils/date_utils.dart';
 import 'package:lexico/features/vocabulary/domain/entities/card_level.dart';
 import 'package:lexico/features/vocabulary/domain/entities/learner_stats.dart';
-import 'package:lexico/features/vocabulary/domain/entities/word_draft.dart';
 import 'package:lexico/features/vocabulary/domain/entities/review_state.dart';
 import 'package:lexico/features/vocabulary/domain/entities/study_card.dart';
 import 'package:lexico/features/vocabulary/domain/entities/sync_conflict.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
+import 'package:lexico/features/vocabulary/domain/entities/word_draft.dart';
 import 'package:lexico/features/vocabulary/domain/repositories/vocabulary_repository.dart';
 
 /// An in-memory stand-in for the real repository, so widget and bloc tests can

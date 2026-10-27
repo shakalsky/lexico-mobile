@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lexico/app/injection.dart';
@@ -31,7 +29,7 @@ class StudyPage extends StatelessWidget {
         listenWhen: (previous, current) => previous.status != current.status,
         listener: (context, state) {
           if (state.status == StudyStatus.abandoned) {
-            unawaited(Navigator.of(context).maybePop());
+            Navigator.of(context).maybePop();
           }
         },
         builder: (context, state) => switch (state.status) {

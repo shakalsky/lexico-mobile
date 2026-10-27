@@ -9,6 +9,7 @@ import 'package:lexico/features/decks/data/repositories/decks_repository_impl.da
 import 'package:lexico/features/decks/domain/repositories/decks_repository.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/delete_deck.dart';
+import 'package:lexico/features/decks/domain/usecases/edit_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
 import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
@@ -130,6 +131,7 @@ void configureDependencies(FlavorConfig config) {
     ..registerLazySingleton(() => GetDecks(sl()))
     ..registerLazySingleton(() => RefreshDecks(sl()))
     ..registerLazySingleton(() => CreateDeck(sl()))
+    ..registerLazySingleton(() => EditDeck(sl()))
     ..registerLazySingleton(() => DeleteDeck(sl()))
     ..registerLazySingleton<SettingsRepository>(
       () => SettingsRepositoryImpl(sl()),

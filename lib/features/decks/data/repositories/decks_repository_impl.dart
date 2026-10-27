@@ -57,7 +57,7 @@ class DecksRepositoryImpl implements DecksRepository {
     } on AppException catch (error) {
       return Result.failure(error.toFailure());
     }
-    return getDecks();
+    return await getDecks();
   }
 
   @override
@@ -86,6 +86,46 @@ class DecksRepositoryImpl implements DecksRepository {
 
     _sync.schedulePush();
     return Result.success(deck.toEntity());
+  }
+
+  /// Only fields that differ from [deck] are queued; keeping both queues
+  /// nothing.
+  @override
+  Future<Result<Deck>> editDeck(
+    Deck deck, {
+    required String name,
+    required String language,
+  }) async {
+    final newName = name == deck.name ? null : name;
+    final newLanguage = language == deck.language ? null : language;
+    if (newName == null && newLanguage == null) return Result.success(deck);
+
+    try {
+      await _transaction(() async {
+        await _local.editDeck(deck.id, name: newName, language: newLanguage);
+        await _pending.add(
+          DeckEdited(
+            deckId: deck.id,
+            deckName: name,
+            name: newName,
+            language: newLanguage,
+          ),
+          _clock(),
+        );
+      });
+    } on AppException catch (error) {
+      return Result.failure(error.toFailure());
+    }
+
+    _sync.schedulePush();
+    return Result.success(
+      Deck(
+        id: deck.id,
+        name: name,
+        language: language,
+        createdAt: deck.createdAt,
+      ),
+    );
   }
 
   /// Changes still waiting for the deck are dropped: the deletion makes

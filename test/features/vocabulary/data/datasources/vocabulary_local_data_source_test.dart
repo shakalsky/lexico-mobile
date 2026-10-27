@@ -115,7 +115,7 @@ void main() {
     expect(await local.wordCount(), 3);
   });
 
-  test('lists a deck\'s words in order, studied or not', () async {
+  test("lists a deck's words in order, studied or not", () async {
     await local.replaceDeck('other-deck', [
       row('y', position: 1).copyWith(deckId: 'other-deck'),
       row('x').copyWith(deckId: 'other-deck'),
@@ -278,7 +278,7 @@ void main() {
   test('cards due at the same moment keep the deck order', () async {
     await replace(
       [
-        row('first', position: 0),
+        row('first'),
         row('second', position: 1),
         row('third', position: 2),
       ].reversed.toList(),

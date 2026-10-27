@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 /// What the learner did offline that the word service refused.
 enum SyncedChange {
   deckCreated,
+  deckEdited,
   deckDeleted,
   wordAdded,
   wordEdited,

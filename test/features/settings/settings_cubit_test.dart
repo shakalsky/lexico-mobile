@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lexico/core/error/failure.dart';
@@ -50,7 +52,11 @@ void main() {
 
   blocTest<SettingsCubit, SettingsState>(
     'rolls the switch back when saving fails',
-    build: () => buildCubit()..load(),
+    build: () {
+      final cubit = buildCubit();
+      unawaited(cubit.load());
+      return cubit;
+    },
     act: (cubit) async {
       await Future<void>.delayed(Duration.zero);
       repository.failure = const CacheFailure();
