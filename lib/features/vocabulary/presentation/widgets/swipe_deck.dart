@@ -25,6 +25,7 @@ class SwipeDeckController {
 class SwipeDeck extends StatefulWidget {
   const SwipeDeck({
     required this.cards,
+    required this.topIndex,
     required this.isRevealed,
     required this.onFlip,
     required this.onAnswered,
@@ -34,6 +35,11 @@ class SwipeDeck extends StatefulWidget {
 
   /// Top card first; only the first three are painted.
   final List<StudyCard> cards;
+
+  /// Where the top card sits in the session. A new value means the stack
+  /// moved on after an answer, so the deck brings the next card in. Needed
+  /// because a missed word dealt again can be the same card twice running.
+  final int topIndex;
   final bool isRevealed;
   final VoidCallback onFlip;
   final ValueChanged<ReviewGrade> onAnswered;
@@ -73,6 +79,12 @@ class _SwipeDeckState extends State<SwipeDeck>
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller?._handler = null;
       widget.controller?._handler = _flingTo;
+    }
+    // The answered card stays off screen until the stack moves on; snapping
+    // it back earlier flashes the old card while the answer is being saved.
+    if (oldWidget.topIndex != widget.topIndex) {
+      _flyingGrade = null;
+      _dx = 0;
     }
   }
 
@@ -133,8 +145,8 @@ class _SwipeDeckState extends State<SwipeDeck>
       _animation.forward().then((_) {
         final grade = _flyingGrade;
         if (grade == null || !mounted) return;
-        _flyingGrade = null;
-        setState(() => _dx = 0);
+        // Stays locked (and off screen) until [didUpdateWidget] sees the
+        // stack advance, so a quick second tap can't answer twice.
         widget.onAnswered(grade);
       }),
     );

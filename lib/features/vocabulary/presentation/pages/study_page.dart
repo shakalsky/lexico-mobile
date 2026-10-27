@@ -130,6 +130,7 @@ class _StudyStackState extends State<_StudyStack> {
                 child: SwipeDeck(
                   controller: _deck,
                   cards: state.visibleCards,
+                  topIndex: state.index,
                   isRevealed: state.isRevealed,
                   onFlip: () =>
                       context.read<StudyBloc>().add(const StudyCardFlipped()),
