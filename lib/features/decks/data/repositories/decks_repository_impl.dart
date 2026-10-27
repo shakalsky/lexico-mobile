@@ -9,18 +9,21 @@ import 'package:lexico/features/decks/domain/repositories/decks_repository.dart'
 import 'package:lexico/features/vocabulary/data/datasources/local/app_database.dart';
 import 'package:lexico/features/vocabulary/data/datasources/local/local_transaction.dart';
 import 'package:lexico/features/vocabulary/data/datasources/local/pending_changes_local_data_source.dart';
+import 'package:lexico/features/vocabulary/data/datasources/local/vocabulary_local_data_source.dart';
 import 'package:lexico/features/vocabulary/data/models/pending_change.dart';
 import 'package:lexico/features/vocabulary/data/sync/sync_engine.dart';
 
 class DecksRepositoryImpl implements DecksRepository {
   DecksRepositoryImpl({
     required DecksLocalDataSource local,
+    required VocabularyLocalDataSource words,
     required PendingChangesLocalDataSource pending,
     required LocalTransaction transaction,
     required SyncEngine sync,
     DateTime Function() clock = DateTime.now,
     IdGenerator newId = uuidV4,
   }) : _local = local,
+       _words = words,
        _pending = pending,
        _transaction = transaction,
        _sync = sync,
@@ -28,6 +31,9 @@ class DecksRepositoryImpl implements DecksRepository {
        _newId = newId;
 
   final DecksLocalDataSource _local;
+
+  /// Deck words, removed along with their deck.
+  final VocabularyLocalDataSource _words;
   final PendingChangesLocalDataSource _pending;
   final LocalTransaction _transaction;
   final SyncEngine _sync;
@@ -80,5 +86,27 @@ class DecksRepositoryImpl implements DecksRepository {
 
     _sync.schedulePush();
     return Result.success(deck.toEntity());
+  }
+
+  /// Changes still waiting for the deck are dropped: the deletion makes
+  /// them moot, and a deck created here may never reach the service at all.
+  /// The deletion is still sent, in case its creation already got through.
+  @override
+  Future<Result<void>> deleteDeck(Deck deck) async {
+    try {
+      await _transaction(() async {
+        await _words.deleteDeck(deck.id);
+        await _pending.removeForDeck(deck.id);
+        await _pending.add(
+          DeckDeleted(deckId: deck.id, name: deck.name),
+          _clock(),
+        );
+      });
+    } on AppException catch (error) {
+      return Result.failure(error.toFailure());
+    }
+
+    _sync.schedulePush();
+    return const Result.success(null);
   }
 }

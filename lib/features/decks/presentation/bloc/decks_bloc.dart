@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/core/usecase/use_case.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
+import 'package:lexico/features/decks/domain/usecases/delete_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
 import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_studied_deck_ids.dart';
@@ -19,21 +20,25 @@ class DecksBloc extends Bloc<DecksEvent, DecksState> {
     required RefreshDecks refreshDecks,
     required GetStudiedDeckIds getStudiedDeckIds,
     required SetDeckStudied setDeckStudied,
+    required DeleteDeck deleteDeck,
   }) : _getDecks = getDecks,
        _refreshDecks = refreshDecks,
        _getStudiedDeckIds = getStudiedDeckIds,
        _setDeckStudied = setDeckStudied,
+       _deleteDeck = deleteDeck,
        super(const DecksState()) {
     on<DecksRequested>(_onRequested);
     on<DecksRefreshed>(_onRefreshed);
     on<DeckAdded>(_onDeckAdded);
     on<DeckStudyToggled>(_onStudyToggled);
+    on<DeckDeleteConfirmed>(_onDeleteConfirmed);
   }
 
   final GetDecks _getDecks;
   final RefreshDecks _refreshDecks;
   final GetStudiedDeckIds _getStudiedDeckIds;
   final SetDeckStudied _setDeckStudied;
+  final DeleteDeck _deleteDeck;
 
   Future<void> _onRequested(DecksRequested event, Emitter<DecksState> emit) =>
       _load(emit);
@@ -128,6 +133,43 @@ class DecksBloc extends Bloc<DecksEvent, DecksState> {
         (_) => state.copyWith(pendingIds: pendingIds),
       ),
     );
+  }
+
+  /// Takes the deck off the list at once, then deletes it; a failed delete
+  /// puts it back in its place and reports the problem.
+  Future<void> _onDeleteConfirmed(
+    DeckDeleteConfirmed event,
+    Emitter<DecksState> emit,
+  ) async {
+    final deck = event.deck;
+    final index = state.decks.indexWhere((d) => d.id == deck.id);
+    if (state.status != DecksStatus.ready || index < 0) {
+      event.done?.complete(false);
+      return;
+    }
+    final wasStudied = state.studiedIds.contains(deck.id);
+
+    emit(
+      state.copyWith(
+        decks: [...state.decks]..removeAt(index),
+        studiedIds: _toggled(state.studiedIds, deck.id, on: false),
+      ),
+    );
+
+    final result = await _deleteDeck(deck);
+    final failure = result.failureOrNull;
+    if (failure != null) {
+      final decks = [...state.decks];
+      decks.insert(index.clamp(0, decks.length), deck);
+      emit(
+        state.copyWith(
+          decks: decks,
+          studiedIds: _toggled(state.studiedIds, deck.id, on: wasStudied),
+          notice: "Couldn't delete “${deck.name}”: ${failure.message}",
+        ),
+      );
+    }
+    event.done?.complete(failure == null);
   }
 
   /// [loaded], with decks whose Study switch is still being saved left as

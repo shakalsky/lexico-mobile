@@ -6,8 +6,9 @@ import 'package:lexico/core/config/flavor_config.dart';
 import 'package:lexico/features/vocabulary/data/sync/sync_engine.dart';
 
 /// Shared startup for every flavor's entrypoint.
-void bootstrap(FlavorConfig config) {
+Future<void> bootstrap(FlavorConfig config) async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
   configureDependencies(config);
   // Changes made offline go out as soon as the app is back in front.

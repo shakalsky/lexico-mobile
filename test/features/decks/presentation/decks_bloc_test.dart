@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
+import 'package:lexico/features/decks/domain/usecases/delete_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
 import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
@@ -19,6 +20,7 @@ final _food = testDeckEntity('es-food', name: 'Food', day: 9);
 
 void main() {
   late FakeVocabularyRepository vocabulary;
+  late FakeDecksRepository decks;
 
   setUp(() => vocabulary = FakeVocabularyRepository());
 
@@ -26,12 +28,13 @@ void main() {
     List<Result<List<Deck>>> results, {
     List<Deck> stored = const [],
   }) {
-    final decks = FakeDecksRepository(decks: results, stored: stored);
+    decks = FakeDecksRepository(decks: results, stored: stored);
     return DecksBloc(
       getDecks: GetDecks(decks),
       refreshDecks: RefreshDecks(decks),
       getStudiedDeckIds: GetStudiedDeckIds(vocabulary),
       setDeckStudied: SetDeckStudied(vocabulary),
+      deleteDeck: DeleteDeck(decks),
     );
   }
 
@@ -219,6 +222,45 @@ void main() {
       seed: () => ready([_food]).copyWith(pendingIds: {'es-food'}),
       act: (bloc) => bloc.add(const DeckStudyToggled('es-food')),
       expect: () => <DecksState>[],
+    );
+  });
+
+  group('deleting', () {
+    blocTest<DecksBloc, DecksState>(
+      'takes the deck off the list and out of the study rotation',
+      build: () => bloc([]),
+      seed: () => ready([_core, _food], studied: {'es-en-core', 'es-food'}),
+      act: (bloc) async {
+        final done = Completer<bool>();
+        bloc.add(DeckDeleteConfirmed(_food, done));
+        expect(await done.future, isTrue);
+      },
+      expect: () => [
+        ready([_core], studied: {'es-en-core'}),
+      ],
+      verify: (_) => expect(decks.deleted, [_food]),
+    );
+
+    blocTest<DecksBloc, DecksState>(
+      'puts it back in its place and explains when the delete fails',
+      build: () {
+        final created = bloc([]);
+        decks.deleteFailure = const CacheFailure('disk full');
+        return created;
+      },
+      seed: () => ready([_core, _food], studied: {'es-food'}),
+      act: (bloc) async {
+        final done = Completer<bool>();
+        bloc.add(DeckDeleteConfirmed(_core, done));
+        expect(await done.future, isFalse);
+      },
+      expect: () => [
+        ready([_food], studied: {'es-food'}),
+        ready(
+          [_core, _food],
+          studied: {'es-food'},
+        ).copyWith(notice: "Couldn't delete “Core”: disk full"),
+      ],
     );
   });
 }

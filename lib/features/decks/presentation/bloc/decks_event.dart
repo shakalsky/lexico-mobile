@@ -32,6 +32,18 @@ final class DeckStudyToggled extends DecksEvent {
   List<Object?> get props => [deckId];
 }
 
+/// The learner swiped a deck away and confirmed. [done] completes with
+/// whether it was deleted.
+final class DeckDeleteConfirmed extends DecksEvent {
+  const DeckDeleteConfirmed(this.deck, [this.done]);
+
+  final Deck deck;
+  final Completer<bool>? done;
+
+  @override
+  List<Object?> get props => [deck];
+}
+
 /// Pull to refresh: reload without hiding the list already shown.
 /// [done] completes once the reload has finished, whatever its outcome.
 final class DecksRefreshed extends DecksEvent {

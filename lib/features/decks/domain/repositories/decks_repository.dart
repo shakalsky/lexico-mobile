@@ -19,4 +19,8 @@ abstract interface class DecksRepository {
     required String name,
     required String language,
   });
+
+  /// Removes [deck], its words and their progress from the device, at once;
+  /// the deletion reaches the word service with the next sync.
+  Future<Result<void>> deleteDeck(Deck deck);
 }

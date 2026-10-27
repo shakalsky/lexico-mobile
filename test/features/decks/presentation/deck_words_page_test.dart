@@ -6,6 +6,7 @@ import 'package:lexico/core/theme/app_theme.dart';
 import 'package:lexico/features/decks/presentation/pages/deck_words_page.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
@@ -54,6 +55,7 @@ void main() {
                 watchSyncConflicts: WatchSyncConflicts(vocabulary),
                 addWord: AddWord(vocabulary),
                 editWord: EditWord(vocabulary),
+                deleteWord: DeleteWord(vocabulary),
               ),
             ),
             child: const Text('open'),
@@ -116,6 +118,49 @@ void main() {
     expect(find.text('-'), findsOneWidget);
     expect(find.text('0%'), findsNothing);
     expect(find.text('2'), findsOneWidget);
+  });
+
+  group('swipe left to delete', () {
+    Future<void> swipe(WidgetTester tester) async {
+      await tester.drag(
+        find.byKey(const Key('word-es-sal')),
+        const Offset(-500, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('asks first, then deletes the word', (tester) async {
+      await openPage(tester, [
+        const Result.success([_sentence]),
+      ]);
+
+      await swipe(tester);
+      expect(find.text('Delete word?'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('confirm-delete')));
+      await tester.pumpAndSettle();
+
+      expect(vocabulary.deletedWords, [_sentence]);
+      expect(find.byKey(const Key('word-es-sal')), findsNothing);
+      expect(find.text('Deleted “¿Me pasas la sal?”'), findsOneWidget);
+      expect(find.text('Español · 0 words'), findsOneWidget);
+      // Let the notice time out.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('keeps the word when cancelled', (tester) async {
+      await openPage(tester, [
+        const Result.success([_sentence]),
+      ]);
+
+      await swipe(tester);
+      await tester.tap(find.byKey(const Key('confirm-delete-cancel')));
+      await tester.pumpAndSettle();
+
+      expect(vocabulary.deletedWords, isEmpty);
+      expect(find.byKey(const Key('word-es-sal')), findsOneWidget);
+    });
   });
 
   testWidgets('says so when the deck is empty', (tester) async {

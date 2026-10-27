@@ -19,9 +19,13 @@ extension SyncConflictMessage on SyncConflict {
         'Your edit to $what was lost: the word was deleted.',
       (SyncedChange.deckCreated, _) =>
         "The deck $what couldn't be created: $serverMessage",
+      (SyncedChange.deckDeleted, _) =>
+        "The deck $what couldn't be deleted: $serverMessage",
       (SyncedChange.wordAdded, _) => "$what wasn't added: $serverMessage",
       (SyncedChange.wordEdited, _) =>
         'Your edit to $what was undone: $serverMessage',
+      (SyncedChange.wordDeleted, _) =>
+        "$what couldn't be deleted: $serverMessage",
     };
   }
 }

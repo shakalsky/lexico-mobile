@@ -6,11 +6,13 @@ import 'package:lexico/core/result/result.dart';
 import 'package:lexico/core/theme/app_theme.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
+import 'package:lexico/features/decks/domain/usecases/delete_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
 import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
 import 'package:lexico/features/decks/presentation/pages/decks_page.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_studied_deck_ids.dart';
@@ -51,6 +53,7 @@ void main() {
             refreshDecks: RefreshDecks(repository),
             getStudiedDeckIds: GetStudiedDeckIds(vocabulary),
             setDeckStudied: SetDeckStudied(vocabulary),
+            deleteDeck: DeleteDeck(repository),
           )..add(const DecksRequested()),
           child: DecksView(
             createDeck: CreateDeck(repository),
@@ -59,6 +62,7 @@ void main() {
             watchSyncConflicts: WatchSyncConflicts(vocabulary),
             addWord: AddWord(vocabulary),
             editWord: EditWord(vocabulary),
+            deleteWord: DeleteWord(vocabulary),
           ),
         ),
       ),
@@ -164,6 +168,55 @@ void main() {
 
     expect(find.text('Studying'), findsOneWidget);
     expect(find.text("Couldn't save: disk full"), findsOneWidget);
+  });
+
+  group('swipe left to delete', () {
+    Future<void> swipe(WidgetTester tester) async {
+      await tester.drag(
+        find.byKey(const Key('deck-es-food')),
+        const Offset(-500, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('asks first, then deletes the deck', (tester) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_core, _food]),
+        ],
+      );
+
+      await swipe(tester);
+      expect(find.text('Delete deck?'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('confirm-delete')));
+      await tester.pumpAndSettle();
+
+      expect(repository.deleted, [_food]);
+      expect(find.byKey(const Key('deck-es-food')), findsNothing);
+      expect(find.byKey(const Key('deck-es-en-core')), findsOneWidget);
+      expect(find.text('Deleted “Food”'), findsOneWidget);
+      // Let the notice time out.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('keeps the deck when cancelled', (tester) async {
+      await pumpDecks(
+        tester,
+        decks: [
+          Result.success([_core, _food]),
+        ],
+      );
+
+      await swipe(tester);
+      await tester.tap(find.byKey(const Key('confirm-delete-cancel')));
+      await tester.pumpAndSettle();
+
+      expect(repository.deleted, isEmpty);
+      expect(find.byKey(const Key('deck-es-food')), findsOneWidget);
+    });
   });
 
   testWidgets('says so when there are no decks', (tester) async {

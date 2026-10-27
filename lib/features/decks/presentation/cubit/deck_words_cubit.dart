@@ -6,6 +6,7 @@ import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/features/vocabulary/domain/entities/sync_conflict.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/watch_sync_conflicts.dart';
@@ -41,8 +42,10 @@ class DeckWordsCubit extends Cubit<DeckWordsState> {
     required GetDeckWords getDeckWords,
     required RefreshDeckWords refreshDeckWords,
     required WatchSyncConflicts watchSyncConflicts,
+    required DeleteWord deleteWord,
   }) : _getDeckWords = getDeckWords,
        _refreshDeckWords = refreshDeckWords,
+       _deleteWord = deleteWord,
        super(const DeckWordsState()) {
     _conflicts = watchSyncConflicts()
         .where((conflict) => conflict.deckId == deckId)
@@ -52,6 +55,7 @@ class DeckWordsCubit extends Cubit<DeckWordsState> {
   final String deckId;
   final GetDeckWords _getDeckWords;
   final RefreshDeckWords _refreshDeckWords;
+  final DeleteWord _deleteWord;
   late final StreamSubscription<SyncConflict> _conflicts;
 
   /// A change to this deck was refused and undone on the device: show the
@@ -156,5 +160,36 @@ class DeckWordsCubit extends Cubit<DeckWordsState> {
         ],
       ),
     );
+  }
+
+  /// Deletes [word]. It leaves the list at once; if the delete fails it
+  /// goes back to its place and the problem is reported. Completes with
+  /// whether it was deleted.
+  Future<bool> deleteWord(VocabWord word) async {
+    final index = state.words.indexWhere((w) => w.id == word.id);
+    if (state.status != DeckWordsStatus.ready || index < 0) return false;
+
+    emit(
+      DeckWordsState(
+        status: DeckWordsStatus.ready,
+        words: [...state.words]..removeAt(index),
+      ),
+    );
+
+    final result = await _deleteWord(word);
+    final failure = result.failureOrNull;
+    if (failure == null) return true;
+    if (isClosed || state.status != DeckWordsStatus.ready) return false;
+
+    final words = [...state.words];
+    words.insert(index.clamp(0, words.length), word);
+    emit(
+      DeckWordsState(
+        status: DeckWordsStatus.ready,
+        words: words,
+        notice: "Couldn't delete “${word.question}”: ${failure.message}",
+      ),
+    );
+    return false;
   }
 }

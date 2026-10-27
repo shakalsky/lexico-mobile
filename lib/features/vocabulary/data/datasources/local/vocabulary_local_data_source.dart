@@ -17,6 +17,9 @@ abstract interface class VocabularyLocalDataSource {
   /// Stores a new word, due at once.
   Future<void> insertWord(WordRow word, DateTime now);
 
+  /// Removes one word and its progress. Does nothing if it is not stored.
+  Future<void> deleteWord(String id);
+
   /// The position after the last word of [deckId].
   Future<int> nextPosition(String deckId);
 
@@ -131,6 +134,12 @@ class VocabularyLocalDataSourceImpl implements VocabularyLocalDataSource {
             ),
           );
     }),
+  );
+
+  @override
+  Future<void> deleteWord(String id) => _guard(
+    // Its review goes with it (ON DELETE CASCADE).
+    () => (_db.delete(_db.words)..where((t) => t.id.equals(id))).go(),
   );
 
   @override

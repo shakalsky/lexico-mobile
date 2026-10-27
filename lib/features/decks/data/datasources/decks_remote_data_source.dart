@@ -15,6 +15,10 @@ abstract interface class DecksRemoteDataSource {
     required String name,
     required String language,
   });
+
+  /// `DELETE /decks/{deckId}` → `204`, no body. Deletes the deck and all of
+  /// its words. A deck that isn't there is refused with `deck_not_found`.
+  Future<void> deleteDeck(String deckId);
 }
 
 class DecksRemoteDataSourceImpl implements DecksRemoteDataSource {
@@ -59,4 +63,9 @@ class DecksRemoteDataSourceImpl implements DecksRemoteDataSource {
       throw ServerException('The new deck had an unreadable date: $error');
     }
   });
+
+  @override
+  Future<void> deleteDeck(String deckId) => guardRequest(
+    () => _dio.delete<void>('/decks/${Uri.encodeComponent(deckId)}'),
+  );
 }

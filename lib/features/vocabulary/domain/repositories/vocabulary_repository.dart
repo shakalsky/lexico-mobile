@@ -41,6 +41,10 @@ abstract interface class VocabularyRepository {
   /// the word service with the next sync.
   Future<Result<VocabWord>> editWord(VocabWord word, WordDraft draft);
 
+  /// Removes [word] and its progress from the device, at once; the deletion
+  /// reaches the word service with the next sync.
+  Future<Result<void>> deleteWord(VocabWord word);
+
   /// Cards of the studied decks whose due date has passed, oldest first,
   /// capped at [limit].
   Future<Result<List<StudyCard>>> dueCards({required int limit});

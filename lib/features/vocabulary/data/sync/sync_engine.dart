@@ -123,14 +123,19 @@ class SyncEngine {
 
   /// Sends waiting changes, then stores the service's deck list. Decks the
   /// service no longer has are removed from the device, unless they have
-  /// changes waiting.
+  /// changes waiting. Decks deleted here but not yet on the service stay
+  /// deleted.
   ///
   /// Throws an [AppException] when the list can't be fetched or stored.
   Future<void> refreshDecks() => _serialized(() async {
     await _drain();
     final decks = await _decksRemote.fetchDecks();
     await _transaction(() async {
-      await _decksLocal.saveDecks([for (final deck in decks) deck.toRow()]);
+      final deleted = await _pending.deletedDeckIds();
+      await _decksLocal.saveDecks([
+        for (final deck in decks)
+          if (!deleted.contains(deck.id)) deck.toRow(),
+      ]);
       final keep = {
         for (final deck in decks) deck.id,
         ...await _pending.deckIds(),
@@ -217,10 +222,16 @@ class SyncEngine {
   }
 
   /// Pulls the decks of [refused] changes so the device matches the service
-  /// again, then tells the learner what was lost.
+  /// again, then tells the learner what was lost. A deck whose deletion was
+  /// refused isn't pulled: it is no longer stored, and comes back with the
+  /// next deck list.
   Future<void> _settle(List<_Refusal> refused) async {
     try {
-      for (final deckId in {for (final r in refused) r.change.deckId}) {
+      final deckIds = {
+        for (final r in refused)
+          if (r.change is! DeckDeleted) r.change.deckId,
+      };
+      for (final deckId in deckIds) {
         try {
           await _pullDeck(deckId);
         } on CacheException {
@@ -249,8 +260,10 @@ class SyncEngine {
     };
     final (change, subject) = switch (refusal.change) {
       DeckCreated(:final name) => (SyncedChange.deckCreated, name),
+      DeckDeleted(:final name) => (SyncedChange.deckDeleted, name),
       WordAdded(:final draft) => (SyncedChange.wordAdded, draft.subject),
       WordEdited(:final draft) => (SyncedChange.wordEdited, draft.subject),
+      WordDeleted(:final subject) => (SyncedChange.wordDeleted, subject),
       WordReviewed() => (null, ''),
     };
     if (change == null) return null;
@@ -304,10 +317,14 @@ class SyncEngine {
             name: name,
             language: language,
           );
+        case DeckDeleted(:final deckId):
+          await _decksRemote.deleteDeck(deckId);
         case WordAdded(:final deckId, :final wordId, :final draft):
           await _wordsRemote.addWords(deckId, [(id: wordId, draft: draft)]);
         case WordEdited(:final wordId, :final draft):
           await _wordsRemote.editWord(wordId, draft);
+        case WordDeleted(:final wordId):
+          await _wordsRemote.deleteWord(wordId);
         case WordReviewed(:final wordId, :final correct):
           await _wordsRemote.submitReview(wordId, correct: correct);
       }
@@ -337,6 +354,14 @@ class SyncEngine {
     // The id is taken: an earlier attempt got through.
     if ((change is DeckCreated && error.code == 'deck_id_taken') ||
         (change is WordAdded && error.code == 'word_ids_taken')) {
+      return _Outcome.done;
+    }
+
+    // Already gone: an earlier attempt, or another device, deleted it.
+    if ((change is WordDeleted &&
+            (error.code == 'word_not_found' ||
+                error.code == 'deck_not_found')) ||
+        (change is DeckDeleted && error.code == 'deck_not_found')) {
       return _Outcome.done;
     }
 

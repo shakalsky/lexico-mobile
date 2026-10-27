@@ -72,6 +72,36 @@ void main() {
       expect(await h.pending.count(), 0);
     });
 
+    test('sends a deleted word', () async {
+      h.acceptChanges();
+      await queue(
+        const WordDeleted(deckId: 'd1', wordId: 'w1', subject: 'el pan'),
+      );
+
+      expect(await h.sync.push(), isTrue);
+
+      verify(() => h.wordsRemote.deleteWord('w1')).called(1);
+      expect(await h.pending.count(), 0);
+    });
+
+    test('treats a word already gone as deleted', () async {
+      h.acceptChanges();
+      when(
+        () => h.wordsRemote.deleteWord(any()),
+      ).thenThrow(refused('word_not_found', 404));
+      final conflicts = <SyncConflict>[];
+      h.sync.conflicts.listen(conflicts.add);
+      await queue(
+        const WordDeleted(deckId: 'd1', wordId: 'w1', subject: 'el pan'),
+      );
+
+      expect(await h.sync.push(), isTrue);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(await h.pending.count(), 0);
+      expect(conflicts, isEmpty);
+    });
+
     test('stops at the first change that cannot get through', () async {
       await queue(const WordAdded(deckId: 'd1', wordId: 'w1', draft: _draft));
       await queue(const WordEdited(deckId: 'd1', wordId: 'w1', draft: _draft));

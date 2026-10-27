@@ -369,6 +369,24 @@ void main() {
     });
   });
 
+  group('deleteWord', () {
+    test('removes the word and its progress at once, and queues it', () async {
+      await storeDeck(testDeckId, ['a', 'b']);
+      final word = (await repository.deckWords(testDeckId)).valueOrNull!.first;
+
+      final result = await repository.deleteWord(word);
+
+      expect(result.isSuccess, isTrue);
+      final left = await h.local.wordsOfDeck(testDeckId);
+      expect(left.map((row) => row.id), ['b']);
+      final reviews = await h.db.select(h.db.reviews).get();
+      expect(reviews.map((row) => row.wordId), ['b']);
+      expect(await queued(), [
+        WordDeleted(deckId: testDeckId, wordId: 'a', subject: word.question),
+      ]);
+    });
+  });
+
   group('saveReview', () {
     final state = ReviewState.fresh(
       'a',

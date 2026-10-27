@@ -93,6 +93,8 @@ class OfflineHarness {
     when(
       () => wordsRemote.editWord(any(), any()),
     ).thenAnswer((_) async => testDto());
+    when(() => wordsRemote.deleteWord(any())).thenAnswer((_) async {});
+    when(() => decksRemote.deleteDeck(any())).thenAnswer((_) async {});
     when(
       () => wordsRemote.submitReview(any(), correct: any(named: 'correct')),
     ).thenAnswer((_) async => testDto());

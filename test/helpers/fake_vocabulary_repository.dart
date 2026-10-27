@@ -84,6 +84,24 @@ class FakeVocabularyRepository implements VocabularyRepository {
     );
   }
 
+  /// When set, [deleteWord] fails with it instead of deleting.
+  Failure? deleteWordFailure;
+  final List<VocabWord> deletedWords = [];
+
+  @override
+  Future<Result<void>> deleteWord(VocabWord word) async {
+    final failure = deleteWordFailure;
+    if (failure != null) return Result.failure(failure);
+    deletedWords.add(word);
+    if (storedDeckWords[word.deckId] case final words?) {
+      storedDeckWords[word.deckId] = [
+        for (final w in words)
+          if (w.id != word.id) w,
+      ];
+    }
+    return const Result.success(null);
+  }
+
   @override
   Future<Result<VocabWord>> addWord(String deckId, WordDraft word) async {
     addedWords.add((deckId: deckId, word: word));

@@ -7,12 +7,14 @@ import 'package:lexico/app/injection.dart';
 import 'package:lexico/core/theme/app_colors.dart';
 import 'package:lexico/core/theme/app_typography.dart';
 import 'package:lexico/core/widgets/app_notice.dart';
+import 'package:lexico/core/widgets/swipe_to_delete.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
 import 'package:lexico/features/decks/presentation/pages/deck_words_page.dart';
 import 'package:lexico/features/decks/presentation/widgets/new_deck_sheet.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
@@ -33,6 +35,7 @@ class DecksPage extends StatelessWidget {
       watchSyncConflicts: sl<WatchSyncConflicts>(),
       addWord: sl<AddWord>(),
       editWord: sl<EditWord>(),
+      deleteWord: sl<DeleteWord>(),
     ),
   );
 }
@@ -45,6 +48,7 @@ class DecksView extends StatelessWidget {
     required this.watchSyncConflicts,
     required this.addWord,
     required this.editWord,
+    required this.deleteWord,
     super.key,
   });
 
@@ -57,6 +61,7 @@ class DecksView extends StatelessWidget {
   final WatchSyncConflicts watchSyncConflicts;
   final AddWord addWord;
   final EditWord editWord;
+  final DeleteWord deleteWord;
 
   Future<void> _addDeck(BuildContext context) async {
     final bloc = context.read<DecksBloc>();
@@ -67,6 +72,14 @@ class DecksView extends StatelessWidget {
 
     bloc.add(DeckAdded(deck));
     notices.show('Created “${deck.name}”');
+  }
+
+  /// Called once the learner confirmed; a failure is reported by the bloc.
+  Future<void> _deleteDeck(BuildContext context, Deck deck) async {
+    final notices = AppNotices.of(context);
+    final done = Completer<bool>();
+    context.read<DecksBloc>().add(DeckDeleteConfirmed(deck, done));
+    if (await done.future) notices.show('Deleted “${deck.name}”');
   }
 
   @override
@@ -104,6 +117,7 @@ class DecksView extends StatelessWidget {
                 DecksStatus.failure => _DecksError(message: state.message),
                 DecksStatus.ready => _DeckList(
                   state: state,
+                  onDeckDeleted: (deck) => _deleteDeck(context, deck),
                   onDeckTapped: (deck) => Navigator.of(context).push(
                     DeckWordsPage.route(
                       deck,
@@ -112,6 +126,7 @@ class DecksView extends StatelessWidget {
                       watchSyncConflicts: watchSyncConflicts,
                       addWord: addWord,
                       editWord: editWord,
+                      deleteWord: deleteWord,
                     ),
                   ),
                 ),
@@ -191,10 +206,17 @@ class _DecksError extends StatelessWidget {
 }
 
 class _DeckList extends StatelessWidget {
-  const _DeckList({required this.state, required this.onDeckTapped});
+  const _DeckList({
+    required this.state,
+    required this.onDeckTapped,
+    required this.onDeckDeleted,
+  });
 
   final DecksState state;
   final ValueChanged<Deck> onDeckTapped;
+
+  /// The learner swiped a deck away and confirmed.
+  final ValueChanged<Deck> onDeckDeleted;
 
   List<Deck> get decks => state.decks;
 
@@ -229,12 +251,21 @@ class _DeckList extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final deck = decks[index];
-              return _DeckTile(
-                deck: deck,
-                isStudied: state.isStudied(deck),
-                onTap: () => onDeckTapped(deck),
-                onStudyToggled: () =>
-                    context.read<DecksBloc>().add(DeckStudyToggled(deck.id)),
+              return SwipeToDelete(
+                id: deck.id,
+                borderRadius: 16,
+                title: 'Delete deck?',
+                message:
+                    '“${deck.name}”, all its words and their progress will '
+                    "be deleted. This can't be undone.",
+                onDeleted: () => onDeckDeleted(deck),
+                child: _DeckTile(
+                  deck: deck,
+                  isStudied: state.isStudied(deck),
+                  onTap: () => onDeckTapped(deck),
+                  onStudyToggled: () =>
+                      context.read<DecksBloc>().add(DeckStudyToggled(deck.id)),
+                ),
               );
             },
           ),

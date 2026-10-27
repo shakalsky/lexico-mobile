@@ -23,6 +23,10 @@ abstract interface class VocabularyRemoteDataSource {
   /// `PATCH /words/{wordId}` with all four text fields → `{ "word": … }`.
   Future<WordDto> editWord(String wordId, WordDraft draft);
 
+  /// `DELETE /words/{wordId}` → `204`, no body. Deletes the word and its
+  /// counters.
+  Future<void> deleteWord(String wordId);
+
   /// `POST /words/{wordId}/reviews` with `{ "correct": … }` → `{ "word": … }`.
   ///
   /// Not idempotent: every call is counted, so never retry it blindly.
@@ -85,6 +89,11 @@ class VocabularyRemoteDataSourceImpl implements VocabularyRemoteDataSource {
         }
         return WordDto.fromJson(word);
       });
+
+  @override
+  Future<void> deleteWord(String wordId) => guardRequest(
+    () => _dio.delete<void>('/words/${Uri.encodeComponent(wordId)}'),
+  );
 
   @override
   Future<WordDto> submitReview(String wordId, {required bool correct}) =>

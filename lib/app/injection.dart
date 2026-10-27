@@ -8,6 +8,7 @@ import 'package:lexico/features/decks/data/datasources/decks_remote_data_source.
 import 'package:lexico/features/decks/data/repositories/decks_repository_impl.dart';
 import 'package:lexico/features/decks/domain/repositories/decks_repository.dart';
 import 'package:lexico/features/decks/domain/usecases/create_deck.dart';
+import 'package:lexico/features/decks/domain/usecases/delete_deck.dart';
 import 'package:lexico/features/decks/domain/usecases/get_decks.dart';
 import 'package:lexico/features/decks/domain/usecases/refresh_decks.dart';
 import 'package:lexico/features/decks/presentation/bloc/decks_bloc.dart';
@@ -29,6 +30,7 @@ import 'package:lexico/features/vocabulary/data/sync/sync_engine.dart';
 import 'package:lexico/features/vocabulary/domain/repositories/vocabulary_repository.dart';
 import 'package:lexico/features/vocabulary/domain/services/spaced_repetition_scheduler.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/finish_study_session.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
@@ -115,9 +117,11 @@ void configureDependencies(FlavorConfig config) {
     ..registerLazySingleton(() => WatchSyncConflicts(sl()))
     ..registerLazySingleton(() => AddWord(sl()))
     ..registerLazySingleton(() => EditWord(sl()))
+    ..registerLazySingleton(() => DeleteWord(sl()))
     ..registerLazySingleton<DecksRepository>(
       () => DecksRepositoryImpl(
         local: sl(),
+        words: sl(),
         pending: sl(),
         transaction: sl(),
         sync: sl(),
@@ -126,6 +130,7 @@ void configureDependencies(FlavorConfig config) {
     ..registerLazySingleton(() => GetDecks(sl()))
     ..registerLazySingleton(() => RefreshDecks(sl()))
     ..registerLazySingleton(() => CreateDeck(sl()))
+    ..registerLazySingleton(() => DeleteDeck(sl()))
     ..registerLazySingleton<SettingsRepository>(
       () => SettingsRepositoryImpl(sl()),
     )
@@ -142,6 +147,7 @@ void configureDependencies(FlavorConfig config) {
         refreshDecks: sl(),
         getStudiedDeckIds: sl(),
         setDeckStudied: sl(),
+        deleteDeck: sl(),
       ),
     )
     ..registerFactory(

@@ -21,6 +21,10 @@ sealed class PendingChange extends Equatable {
       name: payload['name'] as String,
       language: payload['language'] as String,
     ),
+    DeckDeleted.kindName => DeckDeleted(
+      deckId: deckId,
+      name: payload['name'] as String,
+    ),
     WordAdded.kindName => WordAdded(
       deckId: deckId,
       wordId: payload['word_id'] as String,
@@ -30,6 +34,11 @@ sealed class PendingChange extends Equatable {
       deckId: deckId,
       wordId: payload['word_id'] as String,
       draft: WordDraftJson.fromJson(payload),
+    ),
+    WordDeleted.kindName => WordDeleted(
+      deckId: deckId,
+      wordId: payload['word_id'] as String,
+      subject: payload['subject'] as String,
     ),
     WordReviewed.kindName => WordReviewed(
       deckId: deckId,
@@ -70,6 +79,25 @@ final class DeckCreated extends PendingChange {
 
   @override
   List<Object?> get props => [deckId, name, language];
+}
+
+/// `DELETE /decks/{deckId}`.
+final class DeckDeleted extends PendingChange {
+  const DeckDeleted({required super.deckId, required this.name});
+
+  static const kindName = 'deck_deleted';
+
+  /// To name the deck if the service refuses.
+  final String name;
+
+  @override
+  String get kind => kindName;
+
+  @override
+  Map<String, dynamic> get payload => {'name': name};
+
+  @override
+  List<Object?> get props => [deckId, name];
 }
 
 /// `POST /decks/{deckId}/words` with the id chosen on the device.
@@ -116,6 +144,31 @@ final class WordEdited extends PendingChange {
 
   @override
   List<Object?> get props => [deckId, wordId, draft];
+}
+
+/// `DELETE /words/{wordId}`.
+final class WordDeleted extends PendingChange {
+  const WordDeleted({
+    required super.deckId,
+    required this.wordId,
+    required this.subject,
+  });
+
+  static const kindName = 'word_deleted';
+
+  final String wordId;
+
+  /// How the learner knows the word, to name it if the service refuses.
+  final String subject;
+
+  @override
+  String get kind => kindName;
+
+  @override
+  Map<String, dynamic> get payload => {'word_id': wordId, 'subject': subject};
+
+  @override
+  List<Object?> get props => [deckId, wordId, subject];
 }
 
 /// `POST /words/{wordId}/reviews`. Not safe to repeat.

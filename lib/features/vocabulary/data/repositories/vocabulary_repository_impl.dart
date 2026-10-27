@@ -234,6 +234,28 @@ class VocabularyRepositoryImpl implements VocabularyRepository {
   }
 
   @override
+  Future<Result<void>> deleteWord(VocabWord word) async {
+    try {
+      await _transaction(() async {
+        await _local.deleteWord(word.id);
+        await _pending.add(
+          WordDeleted(
+            deckId: word.deckId,
+            wordId: word.id,
+            subject: word.question,
+          ),
+          _clock(),
+        );
+      });
+    } on AppException catch (error) {
+      return Result.failure(error.toFailure());
+    }
+
+    _sync.schedulePush();
+    return const Result.success(null);
+  }
+
+  @override
   Future<Result<List<StudyCard>>> dueCards({required int limit}) =>
       _cards(() => _local.dueCards(now: _clock(), limit: limit));
 

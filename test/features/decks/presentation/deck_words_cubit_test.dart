@@ -5,6 +5,7 @@ import 'package:lexico/core/result/result.dart';
 import 'package:lexico/features/decks/presentation/cubit/deck_words_cubit.dart';
 import 'package:lexico/features/vocabulary/domain/entities/sync_conflict.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/watch_sync_conflicts.dart';
@@ -31,6 +32,7 @@ void main() {
       getDeckWords: GetDeckWords(vocabulary),
       refreshDeckWords: RefreshDeckWords(vocabulary),
       watchSyncConflicts: WatchSyncConflicts(vocabulary),
+      deleteWord: DeleteWord(vocabulary),
     );
   }
 
@@ -83,6 +85,37 @@ void main() {
       ),
     ],
   );
+
+  group('deleteWord', () {
+    blocTest<DeckWordsCubit, DeckWordsState>(
+      'takes the word off the list',
+      build: () => cubit(refreshed: Result.success(fresh)),
+      seed: () => ready(fresh),
+      act: (cubit) => cubit.deleteWord(fresh.first),
+      expect: () => [
+        ready([fresh.last]),
+      ],
+      verify: (_) => expect(vocabulary.deletedWords, [fresh.first]),
+    );
+
+    blocTest<DeckWordsCubit, DeckWordsState>(
+      'puts it back in its place when the delete fails',
+      build: () {
+        vocabulary.deleteWordFailure = const CacheFailure('disk full');
+        return cubit(refreshed: Result.success(fresh));
+      },
+      seed: () => ready(fresh),
+      act: (cubit) => cubit.deleteWord(fresh.first),
+      expect: () => [
+        ready([fresh.last]),
+        DeckWordsState(
+          status: DeckWordsStatus.ready,
+          words: fresh,
+          notice: "Couldn't delete “${fresh.first.question}”: disk full",
+        ),
+      ],
+    );
+  });
 
   group('after a refused change', () {
     SyncConflict conflict(

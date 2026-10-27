@@ -1,3 +1,4 @@
+import 'package:lexico/core/error/failure.dart';
 import 'package:lexico/core/result/result.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/domain/repositories/decks_repository.dart';
@@ -44,6 +45,19 @@ class FakeDecksRepository implements DecksRepository {
     final result = _created.length > 1 ? _created.removeAt(0) : _created.single;
     if (result case Success(:final value)) stored.add(value);
     return result;
+  }
+
+  /// When set, [deleteDeck] fails with it instead of deleting.
+  Failure? deleteFailure;
+  final List<Deck> deleted = [];
+
+  @override
+  Future<Result<void>> deleteDeck(Deck deck) async {
+    final failure = deleteFailure;
+    if (failure != null) return Result.failure(failure);
+    deleted.add(deck);
+    stored.removeWhere((d) => d.id == deck.id);
+    return const Result.success(null);
   }
 }
 

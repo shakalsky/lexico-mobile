@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lexico/core/theme/app_colors.dart';
 import 'package:lexico/core/theme/app_typography.dart';
 import 'package:lexico/core/widgets/app_notice.dart';
+import 'package:lexico/core/widgets/swipe_to_delete.dart';
 import 'package:lexico/features/decks/domain/entities/deck.dart';
 import 'package:lexico/features/decks/presentation/cubit/deck_words_cubit.dart';
 import 'package:lexico/features/decks/presentation/widgets/word_sheet.dart';
 import 'package:lexico/features/vocabulary/domain/entities/vocab_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/add_word.dart';
+import 'package:lexico/features/vocabulary/domain/usecases/delete_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/edit_word.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/get_deck_words.dart';
 import 'package:lexico/features/vocabulary/domain/usecases/refresh_deck_words.dart';
@@ -36,6 +38,7 @@ class DeckWordsPage extends StatelessWidget {
     required WatchSyncConflicts watchSyncConflicts,
     required AddWord addWord,
     required EditWord editWord,
+    required DeleteWord deleteWord,
   }) => MaterialPageRoute(
     builder: (_) => BlocProvider(
       create: (_) => DeckWordsCubit(
@@ -43,6 +46,7 @@ class DeckWordsPage extends StatelessWidget {
         getDeckWords: getDeckWords,
         refreshDeckWords: refreshDeckWords,
         watchSyncConflicts: watchSyncConflicts,
+        deleteWord: deleteWord,
       )..load(),
       child: DeckWordsPage(deck: deck, addWord: addWord, editWord: editWord),
     ),
@@ -77,6 +81,13 @@ class DeckWordsPage extends StatelessWidget {
 
     cubit.wordEdited(saved);
     notices.show('Saved “${saved.question}”');
+  }
+
+  /// Called once the learner confirmed; a failure is reported by the cubit.
+  Future<void> _deleteWord(BuildContext context, VocabWord word) async {
+    final notices = AppNotices.of(context);
+    final deleted = await context.read<DeckWordsCubit>().deleteWord(word);
+    if (deleted) notices.show('Deleted “${word.question}”');
   }
 
   @override
@@ -118,6 +129,7 @@ class DeckWordsPage extends StatelessWidget {
               DeckWordsStatus.ready => _WordList(
                 words: state.words,
                 onWordTapped: (word) => _editWord(context, word),
+                onWordDeleted: (word) => _deleteWord(context, word),
               ),
             },
           ),
@@ -203,10 +215,17 @@ class _Error extends StatelessWidget {
 }
 
 class _WordList extends StatelessWidget {
-  const _WordList({required this.words, required this.onWordTapped});
+  const _WordList({
+    required this.words,
+    required this.onWordTapped,
+    required this.onWordDeleted,
+  });
 
   final List<VocabWord> words;
   final ValueChanged<VocabWord> onWordTapped;
+
+  /// The learner swiped a word away and confirmed.
+  final ValueChanged<VocabWord> onWordDeleted;
 
   @override
   Widget build(BuildContext context) => RefreshIndicator(
@@ -233,7 +252,15 @@ class _WordList extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final word = words[index];
-              return _WordTile(word: word, onTap: () => onWordTapped(word));
+              return SwipeToDelete(
+                id: word.id,
+                title: 'Delete word?',
+                message:
+                    '“${word.question}” and its progress will be deleted. '
+                    "This can't be undone.",
+                onDeleted: () => onWordDeleted(word),
+                child: _WordTile(word: word, onTap: () => onWordTapped(word)),
+              );
             },
           ),
   );
